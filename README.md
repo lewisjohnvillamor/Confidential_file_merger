@@ -1,5 +1,11 @@
 # Confidential File Merger
 
+> **Do not upload your bank statements, contracts, IDs, tax returns, or medical records
+> to random "free PDF merge" websites.** You have no idea who runs them, where your files
+> go, how long they are kept, or who they are sold to. Merging a PDF does not need the
+> internet. This tool does the same job on your own machine, with the browser itself
+> blocked from talking to anyone else, so there is nobody you have to trust.
+
 Merge PDFs and images into a single PDF, **fully offline**, on a machine you control.
 One small Rust binary serves a drag-and-drop web GUI on `localhost`. Nothing is uploaded
 to anyone, nothing phones home, nothing is logged about your documents.
