@@ -160,7 +160,7 @@ encryption is refused.
 ## Support the project
 
 If this saved you from uploading a confidential document to a random website, consider
-buying the author a coffee: <https://paypal.me/lewisjohnvillamor/5>
+buying the author a coffee: <https://buymeacoffee.com/lewisjohnvil>
 
 ## License
 

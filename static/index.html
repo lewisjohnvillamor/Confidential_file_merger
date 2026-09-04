@@ -135,6 +135,14 @@
   .error { margin-top: 20px; padding: 14px 18px; background: var(--danger-soft); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); border-radius: var(--radius); font-size: 14px; white-space: pre-wrap; }
   [hidden] { display: none !important; }
 
+  .why { margin-top: 20px; padding: 16px 18px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+  .why .mark { width: 36px; height: 36px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); display: grid; place-items: center; flex: none; }
+  .why .mark svg { width: 18px; height: 18px; }
+  .why h3 { margin: 0 0 4px; font-size: 14px; }
+  .why p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .why p + p { margin-top: 6px; }
+  @media (max-width: 520px) { .why { grid-template-columns: 1fr; } .why .mark { display: none; } }
+
   details.folder { margin-top: 20px; }
   details.folder summary { padding: 14px 18px; cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 10px; }
   details.folder summary::-webkit-details-marker { display: none; }
@@ -259,13 +267,22 @@
     </div>
   </details>
 
+  <section class="panel why" aria-label="Why this exists">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4v5c0 5-3.8 8.4-9 9-5.2-.6-9-4-9-9V7z"/><path d="M12 9v4M12 16.5v.5"/></svg></div>
+    <div>
+      <h3>Why this exists</h3>
+      <p><strong>Do not upload bank statements, contracts, IDs, tax returns, or medical records to random "free PDF merge" websites.</strong> You have no idea who runs them, where your files go, how long they are kept, or who they are sold to.</p>
+      <p>Merging a PDF does not need the internet. This tool does the same job on your own machine, with the browser itself blocked from talking to anyone else, so there is nobody you have to trust. If it saved you from a sketchy upload, you can <a href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank">buy the author a coffee</a>.</p>
+    </div>
+  </section>
+
   <footer>
     <div>
       <div><strong>Confidential File Merger</strong> <span id="version"></span> · © Lewis John Villamor · <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="noopener noreferrer" target="_blank">Apache License 2.0</a></div>
       <div>Written in Rust. Open source, self-hosted, zero third parties.</div>
     </div>
     <div class="links">
-      <a class="coffee" href="https://paypal.me/lewisjohnvillamor/5" rel="noopener noreferrer" target="_blank" title="Support the author">☕ Buy me a coffee</a>
+      <a class="coffee" href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank" title="Support the author">☕ Buy me a coffee</a>
       <a href="https://github.com/lewisjohnvillamor/Confidential_file_merger" rel="noopener noreferrer" target="_blank">Source code</a>
     </div>
   </footer>
