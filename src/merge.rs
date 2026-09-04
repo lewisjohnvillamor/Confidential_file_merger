@@ -11,14 +11,12 @@ use std::io::Cursor;
 
 use image::{ColorType, DynamicImage, ImageDecoder, ImageFormat, ImageReader};
 use lopdf::{dictionary, Document, Object, ObjectId, Stream};
-use serde::{Deserialize, Serialize};
 
 /// Largest page edge PDF viewers reliably accept (200 inches at 72 pt/in).
 const MAX_PAGE_EDGE_PT: f64 = 14_400.0;
 
 /// How image inputs are laid out on their PDF page.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
 pub enum PageSize {
     /// Page is exactly the image size (1 pixel = 1 point).
     #[default]

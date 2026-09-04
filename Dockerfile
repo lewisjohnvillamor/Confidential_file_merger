@@ -11,7 +11,6 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY static ./static
-COPY tests ./tests
 RUN cargo build --release --locked
 
 FROM debian:bookworm-slim

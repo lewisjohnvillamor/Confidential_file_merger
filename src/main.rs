@@ -1,6 +1,6 @@
 //! Confidential File Merger: an offline, self-hosted PDF + image merger.
 //!
-//! `confidential_file_merger` (no subcommand) starts the local web GUI.
+//! `confidential_file_merger` starts the local web GUI.
 //! `confidential_file_merger merge -o out.pdf a.pdf b.png some_folder/` merges from the CLI.
 
 mod merge;
@@ -18,7 +18,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
 
@@ -43,13 +43,11 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Start the local web GUI (default when no subcommand is given).
-    Serve(ServeArgs),
     /// Merge files and folders from the command line, no browser needed.
     Merge(MergeArgs),
 }
 
-#[derive(clap::Args, Debug, Clone)]
+#[derive(clap::Args, Debug)]
 struct ServeArgs {
     /// Address to listen on. Keep 127.0.0.1 unless you deliberately want LAN access.
     #[arg(long, default_value = "127.0.0.1", env = "CFM_HOST")]
@@ -80,8 +78,8 @@ struct MergeArgs {
     output: PathBuf,
 
     /// Page size used for image inputs.
-    #[arg(long, value_enum, default_value_t = PageSizeArg::Fit)]
-    page_size: PageSizeArg,
+    #[arg(long, value_enum, default_value_t = PageSize::Fit)]
+    page_size: PageSize,
 
     /// Margin (points) around images on A4/Letter pages.
     #[arg(long, default_value_t = 0.0)]
@@ -96,29 +94,11 @@ struct MergeArgs {
     recursive: bool,
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug)]
-enum PageSizeArg {
-    Fit,
-    A4,
-    Letter,
-}
-
-impl From<PageSizeArg> for PageSize {
-    fn from(value: PageSizeArg) -> Self {
-        match value {
-            PageSizeArg::Fit => PageSize::Fit,
-            PageSizeArg::A4 => PageSize::A4,
-            PageSizeArg::Letter => PageSize::Letter,
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
     let result = match cli.command {
         Some(Command::Merge(args)) => run_merge_cli(args),
-        Some(Command::Serve(args)) => serve(args).await,
         None => serve(cli.serve).await,
     };
     if let Err(err) = result {
@@ -143,7 +123,7 @@ fn run_merge_cli(args: MergeArgs) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let options = MergeOptions {
-        page_size: args.page_size.into(),
+        page_size: args.page_size,
         margin_pt: args.margin,
     };
     let pdf = merge::merge(&inputs, options)?;
