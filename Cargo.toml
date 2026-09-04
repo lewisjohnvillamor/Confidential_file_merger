@@ -1,0 +1,24 @@
+[package]
+name = "confidential_file_merger"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Lewis John Villamor"]
+description = "Fully offline, self-hosted PDF and image merger with a drag-and-drop web GUI."
+
+[dependencies]
+axum = { version = "0.7", features = ["multipart"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
+# lopdf's default features add chrono, jiff and time (date parsing we never do); rayon speeds up loading.
+lopdf = { version = "0.44", default-features = false, features = ["rayon"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "tiff", "webp"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive", "env"] }
+percent-encoding = "2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Confidential File Merger</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f5f'/%3E%3Cpath d='M9 8h9l5 5v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z' fill='%23fff'/%3E%3Cpath d='M18 8v5h5' fill='%23b9e4d6'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f4f2ec;
+    --panel: #fffdf8;
+    --panel-2: #f7f4ed;
+    --ink: #1d1c19;
+    --ink-2: #5b5852;
+    --ink-3: #8c877d;
+    --line: #e3ded2;
+    --line-2: #cfc8b8;
+    --accent: #1f6f5f;
+    --accent-ink: #ffffff;
+    --accent-soft: #e2f0eb;
+    --danger: #a33a2a;
+    --danger-soft: #f8e6e2;
+    --ok: #2f7a4d;
+    --shadow: 0 1px 2px rgba(30, 25, 10, .06), 0 8px 24px -12px rgba(30, 25, 10, .18);
+    --radius: 14px;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181a;
+      --panel: #1f2124;
+      --panel-2: #26292d;
+      --ink: #ecebe6;
+      --ink-2: #b4b1a9;
+      --ink-3: #7f7c74;
+      --line: #2f3236;
+      --line-2: #45494f;
+      --accent: #4fb39a;
+      --accent-ink: #0d1a16;
+      --accent-soft: #1d3530;
+      --danger: #e07a68;
+      --danger-soft: #3a2320;
+      --ok: #6cc08d;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.8);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+  body { min-height: 100vh; }
+  a { color: var(--accent); }
+  button { font: inherit; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+  .brand { display: flex; gap: 14px; align-items: center; }
+  .brand svg { width: 44px; height: 44px; flex: none; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .tagline { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+  .drop { position: relative; padding: 36px 24px; text-align: center; border: 2px dashed var(--line-2); border-radius: var(--radius); background: var(--panel); transition: border-color .15s, background .15s, transform .15s; }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); transform: scale(1.005); }
+  .drop h2 { margin: 0 0 6px; font-size: 18px; }
+  .drop p { margin: 0 0 18px; color: var(--ink-2); }
+  .drop .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .drop .hint { margin: 16px 0 0; font-size: 13px; color: var(--ink-3); }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); cursor: pointer; font-weight: 600; text-decoration: none; line-height: 1.2; transition: background .12s, border-color .12s, opacity .12s; }
+  .btn:hover { border-color: var(--ink-3); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.05); }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--ink-2); padding: 7px 10px; }
+  .btn.ghost:hover { background: var(--panel-2); border-color: transparent; color: var(--ink); }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .btn svg { width: 16px; height: 16px; }
+
+  .queue { margin-top: 20px; }
+  .queue-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .queue-head h2 { margin: 0; font-size: 15px; }
+  .queue-head .meta { color: var(--ink-3); font-size: 13px; margin-left: 8px; font-weight: 400; }
+  .queue-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  ul.files { list-style: none; margin: 0; padding: 6px; }
+  ul.files:empty { display: none; }
+  li.file { display: grid; grid-template-columns: 28px 52px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; cursor: grab; border: 1px solid transparent; }
+  li.file:hover { background: var(--panel-2); }
+  li.file.dragging { opacity: .4; }
+  li.file.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+  li.file.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+  li.file .num { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+  li.file .thumb { width: 52px; height: 52px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; color: var(--ink-3); }
+  li.file .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  li.file .thumb svg { width: 24px; height: 24px; }
+  li.file .info { min-width: 0; }
+  li.file .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li.file .sub { color: var(--ink-3); font-size: 13px; display: flex; gap: 8px; align-items: center; }
+  .pill { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .pill.pdf { color: var(--danger); }
+  .pill.image { color: var(--accent); }
+  .pill.server { color: var(--ink-2); }
+  li.file .ctl { display: flex; gap: 2px; }
+  .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-2); cursor: pointer; }
+  .icon-btn:hover { background: var(--panel); border-color: var(--line-2); color: var(--ink); }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+  .empty { padding: 28px 18px; color: var(--ink-3); text-align: center; font-size: 14px; }
+
+  .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 18px; padding: 16px 18px; border-top: 1px solid var(--line); background: var(--panel-2); border-radius: 0 0 var(--radius) var(--radius); }
+  .field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+  .field select, .field input[type=text], .field input[type=number] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
+  .field .help { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+
+  .go { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
+  .go .btn.primary { padding: 12px 22px; font-size: 16px; border-radius: 12px; }
+  .progress { flex: 1; min-width: 200px; height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; display: none; }
+  .progress.on { display: block; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  .progress.busy i { width: 40% !important; animation: slide 1.1s infinite ease-in-out; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+  .status { color: var(--ink-2); font-size: 14px; }
+
+  .result { margin-top: 20px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border-left: 4px solid var(--ok); }
+  .result .grow { flex: 1; min-width: 200px; }
+  .result h3 { margin: 0 0 2px; font-size: 15px; }
+  .result p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .error { margin-top: 20px; padding: 14px 18px; background: var(--danger-soft); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); border-radius: var(--radius); font-size: 14px; white-space: pre-wrap; }
+  [hidden] { display: none !important; }
+
+  details.folder { margin-top: 20px; }
+  details.folder summary { padding: 14px 18px; cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 10px; }
+  details.folder summary::-webkit-details-marker { display: none; }
+  details.folder summary .chev { transition: transform .15s; color: var(--ink-3); }
+  details.folder[open] summary .chev { transform: rotate(90deg); }
+  details.folder summary .sub { color: var(--ink-3); font-weight: 400; font-size: 13px; }
+  .folder-body { padding: 0 18px 18px; border-top: 1px solid var(--line); }
+  .folder-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .folder-row input[type=text] { flex: 1; min-width: 240px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; font-family: var(--mono); font-size: 13px; }
+  .folder-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 14px; }
+  .folder-note { color: var(--ink-3); font-size: 13px; margin: 8px 0 0; }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13px; display: flex; gap: 8px 20px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  footer .links { display: flex; gap: 16px; flex-wrap: wrap; }
+  footer a { color: var(--ink-2); text-decoration: none; }
+  footer a:hover { color: var(--accent); text-decoration: underline; }
+  .coffee { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; pointer-events: none; transition: .2s; max-width: 90vw; }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1f6f5f"/><path d="M9 8h9l5 5v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="#fff"/><path d="M18 8v5h5" fill="#b9e4d6"/><rect x="11" y="16" width="8" height="1.6" rx=".8" fill="#1f6f5f"/><rect x="11" y="19.5" width="6" height="1.6" rx=".8" fill="#1f6f5f"/></svg>
+      <div>
+        <h1>Confidential File Merger</h1>
+        <p class="tagline">Merge PDFs and images into one PDF. Runs on your machine, talks to nobody.</p>
+      </div>
+    </div>
+    <div class="badge" title="The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server."><span class="dot"></span> Offline · nothing leaves this machine</div>
+  </header>
+
+  <section class="drop" id="drop">
+    <h2>Drop PDFs, images, or whole folders here</h2>
+    <p>PDF · PNG · JPEG · GIF · BMP · WebP · TIFF — any amount, any order.</p>
+    <div class="actions">
+      <button class="btn primary" id="pickFiles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add files
+      </button>
+      <button class="btn" id="pickFolder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Add a folder
+      </button>
+    </div>
+    <p class="hint">Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.</p>
+    <input type="file" id="fileInput" class="sr" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tif,.tiff,application/pdf,image/*">
+    <input type="file" id="folderInput" class="sr" multiple webkitdirectory directory>
+  </section>
+
+  <section class="panel queue">
+    <div class="queue-head">
+      <h2>Merge order <span class="meta" id="queueMeta">empty</span></h2>
+      <div class="queue-tools">
+        <button class="btn ghost small" id="sortAz" title="Sort by name (natural order)">Sort A→Z</button>
+        <button class="btn ghost small" id="reverse" title="Reverse order">Reverse</button>
+        <button class="btn ghost small" id="clear" title="Remove everything from the list">Clear</button>
+      </div>
+    </div>
+    <ul class="files" id="files"></ul>
+    <div class="empty" id="empty">Nothing queued yet. Drag items to reorder once added; the list order is the page order.</div>
+    <div class="settings">
+      <div class="field">
+        <label for="pageSize">Image page size</label>
+        <select id="pageSize">
+          <option value="fit">Match image size</option>
+          <option value="a4">A4 (auto orientation)</option>
+          <option value="letter">US Letter (auto orientation)</option>
+        </select>
+        <div class="help">Only affects images. PDF pages keep their original size.</div>
+      </div>
+      <div class="field">
+        <label for="margin">Image margin (pt)</label>
+        <input type="number" id="margin" min="0" max="200" step="1" value="0">
+        <div class="help">Used with A4 / Letter. 72 pt = 1 inch.</div>
+      </div>
+      <div class="field">
+        <label for="outName">Output file name</label>
+        <input type="text" id="outName" value="merged.pdf" spellcheck="false">
+        <div class="help">Saved through your browser's download.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="go">
+    <button class="btn primary" id="merge" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7l3 3h6v9H4z"/><path d="M12 12v5m-2-2 2 2 2-2"/></svg>
+      Merge to PDF
+    </button>
+    <div class="progress" id="progress"><i></i></div>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="error" id="error" hidden></div>
+
+  <section class="panel result" id="result" hidden>
+    <div class="grow">
+      <h3 id="resultTitle">Done</h3>
+      <p id="resultInfo"></p>
+    </div>
+    <a class="btn primary" id="download" download>Download again</a>
+    <button class="btn" id="requeue" title="Put the merged PDF at the end of the list so you can keep merging">Add result to list</button>
+  </section>
+
+  <details class="panel folder" id="folderPanel" hidden>
+    <summary>
+      <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+      Merge a folder from this server's disk
+      <span class="sub" id="folderRootNote"></span>
+    </summary>
+    <div class="folder-body">
+      <div class="folder-row">
+        <input type="text" id="folderPath" placeholder="/path/to/scans" spellcheck="false">
+        <label><input type="checkbox" id="folderRecursive"> include sub-folders</label>
+        <button class="btn" id="folderScan">Scan &amp; add</button>
+      </div>
+      <p class="folder-note">Files are read directly by the server process in natural order (1, 2, 10) and appended to the list above. Useful when the browser runs on the same machine, or the files are too big to upload comfortably.</p>
+    </div>
+  </details>
+
+  <footer>
+    <div>
+      <div><strong>Confidential File Merger</strong> <span id="version"></span> · © Lewis John Villamor · <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="noopener noreferrer" target="_blank">Apache License 2.0</a></div>
+      <div>Written in Rust. Open source, self-hosted, zero third parties.</div>
+    </div>
+    <div class="links">
+      <a class="coffee" href="https://paypal.me/lewisjohnvillamor/5" rel="noopener noreferrer" target="_blank" title="Support the author">☕ Buy me a coffee</a>
+      <a href="https://github.com/lewisjohnvillamor/Confidential_file_merger" rel="noopener noreferrer" target="_blank">Source code</a>
+    </div>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const SUPPORTED = new Set(['pdf','png','jpg','jpeg','gif','bmp','webp','tif','tiff']);
+
+  /** @type {Array<{id:number, name:string, size:number, kind:'pdf'|'image', file?:File, path?:string, thumb?:string}>} */
+  let items = [];
+  let nextId = 1;
+  let lastResultUrl = null;
+  let lastResultBlob = null;
+  let lastResultName = 'merged.pdf';
+
+  const els = {
+    drop: $('drop'), files: $('files'), empty: $('empty'), queueMeta: $('queueMeta'),
+    merge: $('merge'), progress: $('progress'), status: $('status'), error: $('error'),
+    result: $('result'), resultTitle: $('resultTitle'), resultInfo: $('resultInfo'), download: $('download'),
+    fileInput: $('fileInput'), folderInput: $('folderInput'), pageSize: $('pageSize'), margin: $('margin'),
+    outName: $('outName'), folderPanel: $('folderPanel'), folderPath: $('folderPath'), folderRecursive: $('folderRecursive'),
+    folderScan: $('folderScan'), folderRootNote: $('folderRootNote'), toast: $('toast'), requeue: $('requeue'), version: $('version'),
+  };
+
+  // ---------- helpers ----------
+  const ext = (name) => { const i = name.lastIndexOf('.'); return i > 0 ? name.slice(i + 1).toLowerCase() : ''; };
+  const kindOf = (name) => ext(name) === 'pdf' ? 'pdf' : 'image';
+  const fmtSize = (n) => { const u = ['B','KB','MB','GB']; let i = 0; let v = n; while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; } return i ? `${v.toFixed(1)} ${u[i]}` : `${n} B`; };
+  const naturalCmp = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  let toastTimer;
+  const toast = (msg) => { els.toast.textContent = msg; els.toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove('on'), 2600); };
+  const showError = (msg) => { els.error.textContent = msg; els.error.hidden = false; };
+  const clearError = () => { els.error.hidden = true; els.error.textContent = ''; };
+
+  const ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></svg>';
+  const ICON_IMG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>';
+  const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>';
+  const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+
+  // ---------- queue management ----------
+  function addFiles(fileList, opts = {}) {
+    const files = Array.from(fileList);
+    const accepted = [], rejected = [];
+    for (const f of files) {
+      const name = f.name || 'file';
+      if (name.startsWith('.')) continue;
+      if (!SUPPORTED.has(ext(name)) && !(f.type === 'application/pdf' || f.type.startsWith('image/'))) { rejected.push(name); continue; }
+      accepted.push(f);
+    }
+    if (opts.sort !== false) accepted.sort((a, b) => naturalCmp(a.webkitRelativePath || a.name, b.webkitRelativePath || b.name));
+    for (const f of accepted) {
+      const kind = f.type === 'application/pdf' || ext(f.name) === 'pdf' ? 'pdf' : 'image';
+      const item = { id: nextId++, name: f.name, size: f.size, kind, file: f };
+      if (kind === 'image' && f.size < 40 * 1024 * 1024 && !/^(tif|tiff)$/.test(ext(f.name))) item.thumb = URL.createObjectURL(f);
+      items.push(item);
+    }
+    if (rejected.length) toast(`Skipped ${rejected.length} unsupported file${rejected.length > 1 ? 's' : ''} (${rejected.slice(0, 3).join(', ')}${rejected.length > 3 ? ', …' : ''})`);
+    if (accepted.length) toast(`Added ${accepted.length} file${accepted.length > 1 ? 's' : ''}`);
+    render();
+  }
+
+  function removeItem(id) {
+    const i = items.findIndex((x) => x.id === id);
+    if (i < 0) return;
+    if (items[i].thumb) URL.revokeObjectURL(items[i].thumb);
+    items.splice(i, 1);
+    render();
+  }
+  function move(id, delta) {
+    const i = items.findIndex((x) => x.id === id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= items.length) return;
+    [items[i], items[j]] = [items[j], items[i]];
+    render();
+  }
+  function reorder(fromId, toId, after) {
+    if (fromId === toId) return;
+    const from = items.findIndex((x) => x.id === fromId);
+    const [moved] = items.splice(from, 1);
+    let to = items.findIndex((x) => x.id === toId);
+    if (after) to++;
+    items.splice(to, 0, moved);
+    render();
+  }
+
+  function render() {
+    els.files.innerHTML = '';
+    const total = items.reduce((n, x) => n + x.size, 0);
+    els.queueMeta.textContent = items.length ? `${items.length} file${items.length > 1 ? 's' : ''} · ${fmtSize(total)}` : 'empty';
+    els.empty.hidden = items.length > 0;
+    els.merge.disabled = items.length === 0;
+    items.forEach((item, idx) => {
+      const li = document.createElement('li');
+      li.className = 'file';
+      li.draggable = true;
+      li.dataset.id = item.id;
+      li.innerHTML = `
+        <div class="num">${idx + 1}</div>
+        <div class="thumb">${item.thumb ? `<img alt="" loading="lazy" src="${item.thumb}">` : (item.kind === 'pdf' ? ICON_PDF : ICON_IMG)}</div>
+        <div class="info">
+          <div class="name" title=""></div>
+          <div class="sub"><span class="pill ${item.kind}">${item.kind}</span>${item.path ? '<span class="pill server">server</span>' : ''}<span>${fmtSize(item.size)}</span></div>
+        </div>
+        <div class="ctl">
+          <button class="icon-btn" data-act="up" title="Move up" ${idx === 0 ? 'disabled' : ''}>${ICON_UP}</button>
+          <button class="icon-btn" data-act="down" title="Move down" ${idx === items.length - 1 ? 'disabled' : ''}>${ICON_DOWN}</button>
+          <button class="icon-btn danger" data-act="remove" title="Remove">${ICON_X}</button>
+        </div>`;
+      const nameEl = li.querySelector('.name');
+      nameEl.textContent = item.name;
+      nameEl.title = item.path || item.name;
+      els.files.appendChild(li);
+    });
+  }
+
+  els.files.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = Number(btn.closest('li').dataset.id);
+    if (btn.dataset.act === 'up') move(id, -1);
+    else if (btn.dataset.act === 'down') move(id, 1);
+    else removeItem(id);
+  });
+
+  // Drag-to-reorder within the list.
+  let dragId = null;
+  els.files.addEventListener('dragstart', (e) => {
+    const li = e.target.closest('li.file');
+    if (!li) return;
+    dragId = Number(li.dataset.id);
+    li.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(dragId));
+  });
+  els.files.addEventListener('dragend', () => {
+    dragId = null;
+    els.files.querySelectorAll('li').forEach((li) => li.classList.remove('dragging', 'drop-before', 'drop-after'));
+  });
+  els.files.addEventListener('dragover', (e) => {
+    if (dragId === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const li = e.target.closest('li.file');
+    els.files.querySelectorAll('li').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
+    if (!li) return;
+    const rect = li.getBoundingClientRect();
+    li.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-before' : 'drop-after');
+  });
+  els.files.addEventListener('drop', (e) => {
+    if (dragId === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const li = e.target.closest('li.file');
+    if (li) {
+      const after = li.classList.contains('drop-after');
+      reorder(dragId, Number(li.dataset.id), after);
+    }
+    dragId = null;
+  });
+
+  // ---------- adding files: pickers, drop zone (incl. dropped folders) ----------
+  $('pickFiles').addEventListener('click', () => els.fileInput.click());
+  $('pickFolder').addEventListener('click', () => els.folderInput.click());
+  els.fileInput.addEventListener('change', () => { addFiles(els.fileInput.files); els.fileInput.value = ''; });
+  els.folderInput.addEventListener('change', () => { addFiles(els.folderInput.files); els.folderInput.value = ''; });
+
+  let dragDepth = 0;
+  const isExternalDrag = (e) => dragId === null && e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+  document.addEventListener('dragenter', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); dragDepth++; els.drop.classList.add('over'); });
+  document.addEventListener('dragleave', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); if (--dragDepth <= 0) { dragDepth = 0; els.drop.classList.remove('over'); } });
+  document.addEventListener('dragover', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  document.addEventListener('drop', async (e) => {
+    if (!isExternalDrag(e)) return;
+    e.preventDefault();
+    dragDepth = 0;
+    els.drop.classList.remove('over');
+    const dt = e.dataTransfer;
+    const entries = dt.items ? Array.from(dt.items).map((it) => it.webkitGetAsEntry ? it.webkitGetAsEntry() : null) : [];
+    if (entries.some((en) => en && en.isDirectory)) {
+      els.status.textContent = 'Reading folder…';
+      const files = [];
+      for (const en of entries) if (en) await walkEntry(en, files);
+      els.status.textContent = '';
+      addFiles(files);
+    } else {
+      addFiles(dt.files);
+    }
+  });
+
+  function walkEntry(entry, out) {
+    return new Promise((resolve) => {
+      if (entry.isFile) {
+        entry.file((f) => {
+          // Keep the relative path so folder trees sort sensibly.
+          try { Object.defineProperty(f, 'webkitRelativePath', { value: entry.fullPath.replace(/^\//, '') }); } catch (_) {}
+          out.push(f); resolve();
+        }, () => resolve());
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const batch = () => reader.readEntries(async (ents) => {
+          if (!ents.length) return resolve();
+          for (const en of ents) if (!en.name.startsWith('.')) await walkEntry(en, out);
+          batch();
+        }, () => resolve());
+        batch();
+      } else resolve();
+    });
+  }
+
+  // ---------- list tools ----------
+  $('sortAz').addEventListener('click', () => { items.sort((a, b) => naturalCmp(a.name, b.name)); render(); });
+  $('reverse').addEventListener('click', () => { items.reverse(); render(); });
+  $('clear').addEventListener('click', () => { items.forEach((x) => x.thumb && URL.revokeObjectURL(x.thumb)); items = []; render(); });
+
+  // ---------- merging ----------
+  let busy = false;
+  els.merge.addEventListener('click', () => {
+    if (busy || !items.length) return;
+    clearError();
+    els.result.hidden = true;
+    const form = new FormData();
+    form.append('page_size', els.pageSize.value);
+    form.append('margin', els.margin.value || '0');
+    form.append('output_name', els.outName.value || 'merged.pdf');
+    for (const item of items) {
+      if (item.file) form.append('file', item.file, item.name);
+      else if (item.path) form.append('path', item.path);
+    }
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/merge');
+    xhr.responseType = 'blob';
+    busy = true;
+    els.merge.disabled = true;
+    els.progress.classList.add('on');
+    els.progress.classList.remove('busy');
+    els.progress.firstElementChild.style.width = '0%';
+    const started = performance.now();
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      const pct = Math.round((e.loaded / e.total) * 100);
+      els.progress.firstElementChild.style.width = pct + '%';
+      els.status.textContent = pct < 100 ? `Sending to local server… ${pct}%` : 'Merging…';
+      if (pct >= 100) els.progress.classList.add('busy');
+    };
+    xhr.onerror = () => finish(new Error('Could not reach the local server. Is it still running?'));
+    xhr.onload = async () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const blob = xhr.response;
+        const dispo = xhr.getResponseHeader('Content-Disposition') || '';
+        const m = /filename\*=UTF-8''([^;]+)/.exec(dispo) || /filename="([^"]+)"/.exec(dispo);
+        const name = m ? decodeURIComponent(m[1]) : (els.outName.value || 'merged.pdf');
+        deliver(blob, name, performance.now() - started);
+        finish();
+      } else {
+        let msg = `Merge failed (HTTP ${xhr.status}).`;
+        try { const j = JSON.parse(await xhr.response.text()); if (j.error) msg = j.error; } catch (_) {}
+        if (xhr.status === 413) msg = 'The files exceed the server\'s upload limit. Restart with a higher --max-upload-mb or use the folder mode.';
+        finish(new Error(msg));
+      }
+    };
+    xhr.send(form);
+
+    function finish(err) {
+      busy = false;
+      els.merge.disabled = items.length === 0;
+      els.progress.classList.remove('on', 'busy');
+      els.status.textContent = '';
+      if (err) showError(err.message);
+    }
+  });
+
+  function deliver(blob, name, ms) {
+    if (lastResultUrl) URL.revokeObjectURL(lastResultUrl);
+    lastResultUrl = URL.createObjectURL(blob);
+    lastResultBlob = blob;
+    lastResultName = name;
+    els.download.href = lastResultUrl;
+    els.download.download = name;
+    els.resultTitle.textContent = `Merged ${items.length} file${items.length > 1 ? 's' : ''} → ${name}`;
+    els.resultInfo.textContent = `${fmtSize(blob.size)} · ${(ms / 1000).toFixed(1)}s · your list is still here, so you can adjust and merge again.`;
+    els.result.hidden = false;
+    // Kick off the browser download.
+    const a = document.createElement('a');
+    a.href = lastResultUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  els.requeue.addEventListener('click', () => {
+    if (!lastResultBlob) return;
+    const f = new File([lastResultBlob], lastResultName, { type: 'application/pdf' });
+    addFiles([f], { sort: false });
+  });
+
+  // ---------- server-side folder mode ----------
+  els.folderScan.addEventListener('click', async () => {
+    const path = els.folderPath.value.trim();
+    if (!path) { els.folderPath.focus(); return; }
+    clearError();
+    els.folderScan.disabled = true;
+    try {
+      const res = await fetch('/api/folder/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, recursive: els.folderRecursive.checked }) });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+      if (!body.length) { toast('No supported files found in that folder.'); return; }
+      for (const f of body) items.push({ id: nextId++, name: f.name, size: f.size, kind: f.kind, path: f.path });
+      render();
+      toast(`Added ${body.length} file${body.length > 1 ? 's' : ''} from folder`);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      els.folderScan.disabled = false;
+    }
+  });
+  els.folderPath.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.folderScan.click(); });
+
+  // ---------- startup ----------
+  fetch('/api/config').then((r) => r.json()).then((cfg) => {
+    els.version.textContent = 'v' + cfg.version;
+    if (cfg.local_folders) {
+      els.folderPanel.hidden = false;
+      els.folderRootNote.textContent = cfg.folder_root ? `(inside ${cfg.folder_root})` : '';
+    }
+  }).catch(() => {});
+
+  window.addEventListener('beforeunload', (e) => { if (busy) { e.preventDefault(); e.returnValue = ''; } });
+  render();
+})();
+</script>
+</body>
+</html>
