@@ -16,6 +16,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive", "env"] }
 percent-encoding = "2"
+hayro = "0.7"
+resvg = { version = "0.48", default-features = false, features = ["text", "system-fonts"] }
+tiff = "0.11"
+# TLS: rustls with the ring provider (no cmake or Go needed to build, unlike aws-lc-rs).
+axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+rcgen = { version = "0.14", default-features = false, features = ["ring", "pem"] }
+open = "5"
+rand = "0.10"
 
 [profile.release]
 opt-level = 3
