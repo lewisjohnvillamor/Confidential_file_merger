@@ -8,41 +8,18 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f5f'/%3E%3Cpath d='M9 8h9l5 5v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z' fill='%23fff'/%3E%3Cpath d='M18 8v5h5' fill='%23b9e4d6'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #f4f2ec;
-    --panel: #fffdf8;
-    --panel-2: #f7f4ed;
-    --ink: #1d1c19;
-    --ink-2: #5b5852;
-    --ink-3: #8c877d;
-    --line: #e3ded2;
-    --line-2: #cfc8b8;
-    --accent: #1f6f5f;
-    --accent-ink: #ffffff;
-    --accent-soft: #e2f0eb;
-    --danger: #a33a2a;
-    --danger-soft: #f8e6e2;
-    --ok: #2f7a4d;
-    --shadow: 0 1px 2px rgba(30, 25, 10, .06), 0 8px 24px -12px rgba(30, 25, 10, .18);
-    --radius: 14px;
+    --bg: #f4f2ec; --panel: #fffdf8; --panel-2: #f7f4ed; --ink: #1d1c19; --ink-2: #5b5852; --ink-3: #8c877d;
+    --line: #e3ded2; --line-2: #cfc8b8; --accent: #1f6f5f; --accent-ink: #ffffff; --accent-soft: #e2f0eb;
+    --danger: #a33a2a; --danger-soft: #f8e6e2; --ok: #2f7a4d; --warn: #9a6b12; --warn-soft: #fbf0d6;
+    --shadow: 0 1px 2px rgba(30, 25, 10, .06), 0 8px 24px -12px rgba(30, 25, 10, .18); --radius: 14px;
     --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #17181a;
-      --panel: #1f2124;
-      --panel-2: #26292d;
-      --ink: #ecebe6;
-      --ink-2: #b4b1a9;
-      --ink-3: #7f7c74;
-      --line: #2f3236;
-      --line-2: #45494f;
-      --accent: #4fb39a;
-      --accent-ink: #0d1a16;
-      --accent-soft: #1d3530;
-      --danger: #e07a68;
-      --danger-soft: #3a2320;
-      --ok: #6cc08d;
+      --bg: #17181a; --panel: #1f2124; --panel-2: #26292d; --ink: #ecebe6; --ink-2: #b4b1a9; --ink-3: #7f7c74;
+      --line: #2f3236; --line-2: #45494f; --accent: #4fb39a; --accent-ink: #0d1a16; --accent-soft: #1d3530;
+      --danger: #e07a68; --danger-soft: #3a2320; --ok: #6cc08d; --warn: #e0b45c; --warn-soft: #3a2f16;
       --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.8);
     }
   }
@@ -51,9 +28,9 @@
   body { min-height: 100vh; }
   a { color: var(--accent); }
   button { font: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
-
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
   .brand { display: flex; gap: 14px; align-items: center; }
   .brand svg { width: 44px; height: 44px; flex: none; }
@@ -89,35 +66,46 @@
 
   ul.files { list-style: none; margin: 0; padding: 6px; }
   ul.files:empty { display: none; }
-  li.file { display: grid; grid-template-columns: 28px 52px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; cursor: grab; border: 1px solid transparent; }
-  li.file:hover { background: var(--panel-2); }
+  li.file { display: grid; grid-template-columns: 28px 56px 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 10px; cursor: grab; border: 1px solid transparent; }
+  li.file:hover, li.file:focus-within { background: var(--panel-2); }
   li.file.dragging { opacity: .4; }
   li.file.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
   li.file.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
   li.file .num { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
-  li.file .thumb { width: 52px; height: 52px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; color: var(--ink-3); }
-  li.file .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  li.file .thumb { width: 56px; height: 56px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; color: var(--ink-3); }
+  li.file .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform .15s; }
   li.file .thumb svg { width: 24px; height: 24px; }
   li.file .info { min-width: 0; }
   li.file .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  li.file .sub { color: var(--ink-3); font-size: 13px; display: flex; gap: 8px; align-items: center; }
-  .pill { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); }
+  li.file .sub { color: var(--ink-3); font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pill { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
   .pill.pdf { color: var(--danger); }
   .pill.image { color: var(--accent); }
   .pill.server { color: var(--ink-2); }
-  li.file .ctl { display: flex; gap: 2px; }
+  .pill.sel { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); background: var(--warn-soft); text-transform: none; letter-spacing: 0; }
+  li.file .ctl { display: flex; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
   .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-2); cursor: pointer; }
   .icon-btn:hover { background: var(--panel); border-color: var(--line-2); color: var(--ink); }
   .icon-btn:disabled { opacity: .3; cursor: default; }
   .icon-btn svg { width: 16px; height: 16px; }
   .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+  .unlock { grid-column: 3 / span 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--warn); }
+  .unlock input { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; width: 180px; }
+  .unlock .err { color: var(--danger); }
 
   .empty { padding: 28px 18px; color: var(--ink-3); text-align: center; font-size: 14px; }
 
-  .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 18px; padding: 16px 18px; border-top: 1px solid var(--line); background: var(--panel-2); border-radius: 0 0 var(--radius) var(--radius); }
+  .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 18px; padding: 16px 18px; border-top: 1px solid var(--line); background: var(--panel-2); }
+  .settings.last { border-radius: 0 0 var(--radius) var(--radius); }
   .field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
   .field select, .field input[type=text], .field input[type=number] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
   .field .help { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--panel-2); font-size: 14px; color: var(--ink-2); }
+  .checks label { display: inline-flex; gap: 6px; align-items: center; }
+  details.more summary { padding: 10px 18px; border-top: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary::before { content: "▸ "; }
+  details.more[open] summary::before { content: "▾ "; }
 
   .go { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
   .go .btn.primary { padding: 12px 22px; font-size: 16px; border-radius: 12px; }
@@ -135,14 +123,6 @@
   .error { margin-top: 20px; padding: 14px 18px; background: var(--danger-soft); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); border-radius: var(--radius); font-size: 14px; white-space: pre-wrap; }
   [hidden] { display: none !important; }
 
-  .why { margin-top: 20px; padding: 16px 18px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
-  .why .mark { width: 36px; height: 36px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); display: grid; place-items: center; flex: none; }
-  .why .mark svg { width: 18px; height: 18px; }
-  .why h3 { margin: 0 0 4px; font-size: 14px; }
-  .why p { margin: 0; color: var(--ink-2); font-size: 14px; }
-  .why p + p { margin-top: 6px; }
-  @media (max-width: 520px) { .why { grid-template-columns: 1fr; } .why .mark { display: none; } }
-
   details.folder { margin-top: 20px; }
   details.folder summary { padding: 14px 18px; cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 10px; }
   details.folder summary::-webkit-details-marker { display: none; }
@@ -155,15 +135,50 @@
   .folder-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 14px; }
   .folder-note { color: var(--ink-3); font-size: 13px; margin: 8px 0 0; }
 
+  .why { margin-top: 20px; padding: 16px 18px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+  .why .mark { width: 36px; height: 36px; border-radius: 10px; background: var(--danger-soft); color: var(--danger); display: grid; place-items: center; flex: none; }
+  .why .mark svg { width: 18px; height: 18px; }
+  .why h3 { margin: 0 0 4px; font-size: 14px; }
+  .why p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .why p + p { margin-top: 6px; }
+  @media (max-width: 520px) { .why { grid-template-columns: 1fr; } .why .mark { display: none; } }
+
   footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 13px; display: flex; gap: 8px 20px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-  footer .links { display: flex; gap: 16px; flex-wrap: wrap; }
+  footer .links { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   footer a { color: var(--ink-2); text-decoration: none; }
   footer a:hover { color: var(--accent); text-decoration: underline; }
+  footer select { padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); font: inherit; font-size: 13px; }
   .coffee { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
 
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; pointer-events: none; transition: .2s; max-width: 90vw; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; pointer-events: none; transition: .2s; max-width: 90vw; z-index: 50; }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Modal (page picker, login) */
+  .overlay { position: fixed; inset: 0; background: rgba(10, 10, 8, .55); display: grid; place-items: center; z-index: 40; padding: 20px; }
+  .modal { width: min(960px, 100%); max-height: 92vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .modal.small { width: min(420px, 100%); }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .modal-head h3 { margin: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .modal-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 18px; border-bottom: 1px solid var(--line); background: var(--panel-2); font-size: 13px; }
+  .modal-tools input[type=text] { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; width: 200px; }
+  .modal-body { overflow: auto; padding: 14px 18px; }
+  .modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); flex-wrap: wrap; }
+  .modal-foot .right { display: flex; gap: 8px; }
+  .pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .pg { border: 2px solid var(--line); border-radius: 10px; padding: 8px; background: var(--panel-2); cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: center; position: relative; user-select: none; }
+  .pg.on { border-color: var(--accent); background: var(--accent-soft); }
+  .pg .img { width: 100%; height: 130px; display: grid; place-items: center; overflow: hidden; }
+  .pg img { max-width: 100%; max-height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,.25); background: #fff; transition: transform .15s; }
+  .pg .lbl { display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 12px; color: var(--ink-2); }
+  .pg .lbl b { color: var(--ink); }
+  .pg .rot { font-size: 11px; color: var(--warn); }
+  .pg input[type=checkbox] { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; accent-color: var(--accent); }
+  .pg .icon-btn { width: 26px; height: 26px; }
+  .login { padding: 22px 18px; display: grid; gap: 12px; }
+  .login input { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font: inherit; }
+  .login p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .login .err { color: var(--danger); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -173,279 +188,573 @@
       <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1f6f5f"/><path d="M9 8h9l5 5v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="#fff"/><path d="M18 8v5h5" fill="#b9e4d6"/><rect x="11" y="16" width="8" height="1.6" rx=".8" fill="#1f6f5f"/><rect x="11" y="19.5" width="6" height="1.6" rx=".8" fill="#1f6f5f"/></svg>
       <div>
         <h1>Confidential File Merger</h1>
-        <p class="tagline">Merge PDFs and images into one PDF. Runs on your machine, talks to nobody.</p>
+        <p class="tagline" data-i18n="tagline">Merge PDFs and images into one PDF. Runs on your machine, talks to nobody.</p>
       </div>
     </div>
-    <div class="badge" title="The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server."><span class="dot"></span> Offline · nothing leaves this machine</div>
+    <div class="badge" data-i18n-title="badge_title" title="The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server."><span class="dot"></span> <span data-i18n="badge">Offline · nothing leaves this machine</span></div>
   </header>
 
   <section class="drop" id="drop">
-    <h2>Drop PDFs, images, or whole folders here</h2>
-    <p>PDF · PNG · JPEG · GIF · BMP · WebP · TIFF — any amount, any order.</p>
+    <h2 data-i18n="drop_title">Drop PDFs, images, or whole folders here</h2>
+    <p data-i18n="drop_formats">PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — any amount, any order.</p>
     <div class="actions">
       <button class="btn primary" id="pickFiles">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        Add files
+        <span data-i18n="add_files">Add files</span>
       </button>
       <button class="btn" id="pickFolder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        Add a folder
+        <span data-i18n="add_folder">Add a folder</span>
       </button>
     </div>
-    <p class="hint">Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.</p>
-    <input type="file" id="fileInput" class="sr" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tif,.tiff,application/pdf,image/*">
+    <p class="hint" data-i18n="drop_hint">Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.</p>
+    <input type="file" id="fileInput" class="sr" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tif,.tiff,.svg,.svgz,application/pdf,image/*">
     <input type="file" id="folderInput" class="sr" multiple webkitdirectory directory>
   </section>
 
   <section class="panel queue">
     <div class="queue-head">
-      <h2>Merge order <span class="meta" id="queueMeta">empty</span></h2>
+      <h2><span data-i18n="merge_order">Merge order</span> <span class="meta" id="queueMeta"></span></h2>
       <div class="queue-tools">
-        <button class="btn ghost small" id="sortAz" title="Sort by name (natural order)">Sort A→Z</button>
-        <button class="btn ghost small" id="reverse" title="Reverse order">Reverse</button>
-        <button class="btn ghost small" id="clear" title="Remove everything from the list">Clear</button>
+        <button class="btn ghost small" id="sortAz" data-i18n="sort_az" data-i18n-title="sort_az_title" title="Sort by name (natural order)">Sort A→Z</button>
+        <button class="btn ghost small" id="reverse" data-i18n="reverse" title="Reverse order">Reverse</button>
+        <button class="btn ghost small" id="clear" data-i18n="clear" title="Remove everything from the list">Clear</button>
       </div>
     </div>
-    <ul class="files" id="files"></ul>
-    <div class="empty" id="empty">Nothing queued yet. Drag items to reorder once added; the list order is the page order.</div>
+    <ul class="files" id="files" role="list" aria-label="Files to merge"></ul>
+    <div class="empty" id="empty" data-i18n="empty">Nothing queued yet. Drag items to reorder once added; the list order is the page order. Keyboard: Alt+↑/↓ move, R rotate, P pages, Delete remove.</div>
     <div class="settings">
       <div class="field">
-        <label for="pageSize">Image page size</label>
+        <label for="pageSize" data-i18n="page_size">Image page size</label>
         <select id="pageSize">
-          <option value="fit">Match image size</option>
-          <option value="a4">A4 (auto orientation)</option>
-          <option value="letter">US Letter (auto orientation)</option>
+          <option value="fit" data-i18n="ps_fit">Match image (uses DPI)</option>
+          <option value="a4" data-i18n="ps_a4">A4 (auto orientation)</option>
+          <option value="letter" data-i18n="ps_letter">US Letter (auto orientation)</option>
         </select>
-        <div class="help">Only affects images. PDF pages keep their original size.</div>
+        <div class="help" data-i18n="page_size_help">Only affects images. PDF pages keep their original size.</div>
       </div>
       <div class="field">
-        <label for="margin">Image margin (pt)</label>
+        <label for="margin" data-i18n="margin">Image margin (pt)</label>
         <input type="number" id="margin" min="0" max="200" step="1" value="0">
-        <div class="help">Used with A4 / Letter. 72 pt = 1 inch.</div>
+        <div class="help" data-i18n="margin_help">Used with A4 / Letter. 72 pt = 1 inch.</div>
       </div>
       <div class="field">
-        <label for="outName">Output file name</label>
+        <label for="outName" data-i18n="out_name">Output file name</label>
         <input type="text" id="outName" value="merged.pdf" spellcheck="false">
-        <div class="help">Saved through your browser's download.</div>
+        <div class="help" data-i18n="out_name_help">Saved through your browser's download.</div>
       </div>
     </div>
+    <details class="more" id="propsDetails">
+      <summary data-i18n="doc_props">Document properties</summary>
+      <div class="settings">
+        <div class="field"><label for="metaTitle" data-i18n="meta_title">Title</label><input type="text" id="metaTitle"></div>
+        <div class="field"><label for="metaAuthor" data-i18n="meta_author">Author</label><input type="text" id="metaAuthor"></div>
+        <div class="field"><label for="metaSubject" data-i18n="meta_subject">Subject</label><input type="text" id="metaSubject"></div>
+        <div class="field"><label for="metaKeywords" data-i18n="meta_keywords">Keywords</label><input type="text" id="metaKeywords"></div>
+      </div>
+    </details>
+    <details class="more" id="advDetails">
+      <summary data-i18n="advanced">Advanced</summary>
+      <div class="checks">
+        <label><input type="checkbox" id="optBookmarks" checked> <span data-i18n="opt_bookmarks">Bookmark per file</span></label>
+        <label><input type="checkbox" id="optOutlines" checked> <span data-i18n="opt_outlines">Keep source outlines</span></label>
+        <label><input type="checkbox" id="optForms" checked> <span data-i18n="opt_forms">Merge form fields</span></label>
+        <label><input type="checkbox" id="optOptimize" checked> <span data-i18n="opt_optimize">De-duplicate and compress</span></label>
+        <label><input type="checkbox" id="optDpi" checked> <span data-i18n="opt_dpi">Use image DPI for page size</span></label>
+      </div>
+    </details>
+    <div class="settings last" style="padding:0"></div>
   </section>
 
   <div class="go">
     <button class="btn primary" id="merge" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7l3 3h6v9H4z"/><path d="M12 12v5m-2-2 2 2 2-2"/></svg>
-      Merge to PDF
+      <span data-i18n="merge_btn">Merge to PDF</span>
     </button>
     <div class="progress" id="progress"><i></i></div>
-    <span class="status" id="status"></span>
+    <span class="status" id="status" aria-live="polite"></span>
   </div>
 
-  <div class="error" id="error" hidden></div>
+  <div class="error" id="error" hidden role="alert"></div>
 
   <section class="panel result" id="result" hidden>
     <div class="grow">
-      <h3 id="resultTitle">Done</h3>
+      <h3 id="resultTitle"></h3>
       <p id="resultInfo"></p>
     </div>
-    <a class="btn primary" id="download" download>Download again</a>
-    <button class="btn" id="requeue" title="Put the merged PDF at the end of the list so you can keep merging">Add result to list</button>
+    <a class="btn primary" id="download" download data-i18n="download_again">Download again</a>
+    <button class="btn" id="requeue" data-i18n="requeue" data-i18n-title="requeue_title" title="Put the merged PDF at the end of the list so you can keep merging">Add result to list</button>
   </section>
 
   <details class="panel folder" id="folderPanel" hidden>
     <summary>
       <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
-      Merge a folder from this server's disk
+      <span data-i18n="folder_title">Merge a folder from this server's disk</span>
       <span class="sub" id="folderRootNote"></span>
     </summary>
     <div class="folder-body">
       <div class="folder-row">
         <input type="text" id="folderPath" placeholder="/path/to/scans" spellcheck="false">
-        <label><input type="checkbox" id="folderRecursive"> include sub-folders</label>
-        <button class="btn" id="folderScan">Scan &amp; add</button>
+        <label><input type="checkbox" id="folderRecursive"> <span data-i18n="folder_recursive">include sub-folders</span></label>
+        <button class="btn" id="folderScan" data-i18n="folder_scan">Scan &amp; add</button>
       </div>
-      <p class="folder-note">Files are read directly by the server process in natural order (1, 2, 10) and appended to the list above. Useful when the browser runs on the same machine, or the files are too big to upload comfortably.</p>
+      <p class="folder-note" data-i18n="folder_note">Files are read directly by the server process in natural order (1, 2, 10) and appended to the list above. Useful when the browser runs on the same machine, or the files are too big to upload comfortably.</p>
     </div>
   </details>
 
   <section class="panel why" aria-label="Why this exists">
     <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4v5c0 5-3.8 8.4-9 9-5.2-.6-9-4-9-9V7z"/><path d="M12 9v4M12 16.5v.5"/></svg></div>
     <div>
-      <h3>Why this exists</h3>
-      <p><strong>Do not upload bank statements, contracts, IDs, tax returns, or medical records to random "free PDF merge" websites.</strong> You have no idea who runs them, where your files go, how long they are kept, or who they are sold to.</p>
-      <p>Merging a PDF does not need the internet. This tool does the same job on your own machine, with the browser itself blocked from talking to anyone else, so there is nobody you have to trust. If it saved you from a sketchy upload, you can <a href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank">buy the author a coffee</a>.</p>
+      <h3 data-i18n="why_title">Why this exists</h3>
+      <p><strong data-i18n="why_1">Do not upload bank statements, contracts, IDs, tax returns, or medical records to random "free PDF merge" websites.</strong> <span data-i18n="why_2">You have no idea who runs them, where your files go, how long they are kept, or who they are sold to.</span></p>
+      <p><span data-i18n="why_3">Merging a PDF does not need the internet. This tool does the same job on your own machine, with the browser itself blocked from talking to anyone else, so there is nobody you have to trust. If it saved you from a sketchy upload, you can</span> <a href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank" data-i18n="why_coffee">buy the author a coffee</a>.</p>
     </div>
   </section>
 
   <footer>
     <div>
       <div><strong>Confidential File Merger</strong> <span id="version"></span> · © Lewis John Villamor · <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="noopener noreferrer" target="_blank">Apache License 2.0</a></div>
-      <div>Written in Rust. Open source, self-hosted, zero third parties.</div>
+      <div data-i18n="footer_line">Written in Rust. Open source, self-hosted, zero third parties.</div>
     </div>
     <div class="links">
-      <a class="coffee" href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank" title="Support the author">☕ Buy me a coffee</a>
-      <a href="https://github.com/lewisjohnvillamor/Confidential_file_merger" rel="noopener noreferrer" target="_blank">Source code</a>
+      <label class="sr" for="lang">Language</label>
+      <select id="lang"><option value="en">English</option><option value="es">Español</option></select>
+      <a class="coffee" href="https://buymeacoffee.com/lewisjohnvil" rel="noopener noreferrer" target="_blank" title="Support the author">☕ <span data-i18n="coffee">Buy me a coffee</span></a>
+      <a href="https://github.com/lewisjohnvillamor/Confidential_file_merger" rel="noopener noreferrer" target="_blank" data-i18n="source">Source code</a>
+      <a href="#" id="logout" hidden data-i18n="logout">Sign out</a>
     </div>
   </footer>
 </div>
+
+<!-- Page picker -->
+<div class="overlay" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="pickerTitle"></h3>
+      <button class="icon-btn" id="pickerClose" title="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="modal-tools">
+      <label for="pickerRange" data-i18n="pk_pages">Pages</label>
+      <input type="text" id="pickerRange" placeholder="1-3, 5, odd" spellcheck="false">
+      <button class="btn ghost small" data-pk="all" data-i18n="pk_all">All</button>
+      <button class="btn ghost small" data-pk="none" data-i18n="pk_none">None</button>
+      <button class="btn ghost small" data-pk="odd" data-i18n="pk_odd">Odd</button>
+      <button class="btn ghost small" data-pk="even" data-i18n="pk_even">Even</button>
+      <button class="btn ghost small" data-pk="invert" data-i18n="pk_invert">Invert</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost small" id="pickerRotateAll" data-i18n="pk_rotate_all">Rotate all 90°</button>
+    </div>
+    <div class="modal-body"><div class="pages" id="pickerGrid"></div><p class="empty" id="pickerLoading" data-i18n="pk_loading">Rendering pages…</p></div>
+    <div class="modal-foot">
+      <span id="pickerCount"></span>
+      <div class="right">
+        <button class="btn" id="pickerCancel" data-i18n="cancel">Cancel</button>
+        <button class="btn primary" id="pickerApply" data-i18n="apply">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Login -->
+<div class="overlay" id="loginOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <form class="modal small" id="loginForm">
+    <div class="modal-head"><h3 id="loginTitle" data-i18n="login_title">Access token required</h3></div>
+    <div class="login">
+      <p data-i18n="login_text">This server was started with an access token. Enter it once; it is kept in a cookie for this browser only.</p>
+      <input type="password" id="loginToken" autocomplete="current-password" data-i18n-placeholder="login_placeholder" placeholder="Access token">
+      <div class="err" id="loginError" hidden></div>
+      <button class="btn primary" type="submit" data-i18n="login_btn">Sign in</button>
+    </div>
+  </form>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr" id="announce" aria-live="assertive"></div>
 
 <script>
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const SUPPORTED = new Set(['pdf','png','jpg','jpeg','gif','bmp','webp','tif','tiff']);
+  const SUPPORTED = new Set(['pdf','png','jpg','jpeg','gif','bmp','webp','tif','tiff','svg','svgz']);
+  const SERVER_THUMB = new Set(['pdf','tif','tiff']);
 
-  /** @type {Array<{id:number, name:string, size:number, kind:'pdf'|'image', file?:File, path?:string, thumb?:string}>} */
+  // ---------- i18n ----------
+  const STRINGS = {
+    en: {
+      tagline: 'Merge PDFs and images into one PDF. Runs on your machine, talks to nobody.',
+      badge: 'Offline · nothing leaves this machine',
+      badge_title: 'The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server.',
+      drop_title: 'Drop PDFs, images, or whole folders here',
+      drop_formats: 'PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — any amount, any order.',
+      add_files: 'Add files', add_folder: 'Add a folder',
+      drop_hint: 'Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.',
+      merge_order: 'Merge order', sort_az: 'Sort A→Z', sort_az_title: 'Sort by name (natural order)', reverse: 'Reverse', clear: 'Clear',
+      empty: 'Nothing queued yet. Drag items to reorder once added; the list order is the page order. Keyboard: Alt+↑/↓ move, R rotate, P pages, Delete remove.',
+      page_size: 'Image page size', ps_fit: 'Match image (uses DPI)', ps_a4: 'A4 (auto orientation)', ps_letter: 'US Letter (auto orientation)',
+      page_size_help: 'Only affects images. PDF pages keep their original size.',
+      margin: 'Image margin (pt)', margin_help: 'Used with A4 / Letter. 72 pt = 1 inch.',
+      out_name: 'Output file name', out_name_help: "Saved through your browser's download.",
+      doc_props: 'Document properties', meta_title: 'Title', meta_author: 'Author', meta_subject: 'Subject', meta_keywords: 'Keywords',
+      advanced: 'Advanced', opt_bookmarks: 'Bookmark per file', opt_outlines: 'Keep source outlines', opt_forms: 'Merge form fields',
+      opt_optimize: 'De-duplicate and compress', opt_dpi: 'Use image DPI for page size',
+      merge_btn: 'Merge to PDF', download_again: 'Download again', requeue: 'Add result to list',
+      requeue_title: 'Put the merged PDF at the end of the list so you can keep merging',
+      folder_title: "Merge a folder from this server's disk", folder_recursive: 'include sub-folders', folder_scan: 'Scan & add',
+      folder_note: 'Files are read directly by the server process in natural order (1, 2, 10) and appended to the list above. Useful when the browser runs on the same machine, or the files are too big to upload comfortably.',
+      why_title: 'Why this exists',
+      why_1: 'Do not upload bank statements, contracts, IDs, tax returns, or medical records to random "free PDF merge" websites.',
+      why_2: 'You have no idea who runs them, where your files go, how long they are kept, or who they are sold to.',
+      why_3: 'Merging a PDF does not need the internet. This tool does the same job on your own machine, with the browser itself blocked from talking to anyone else, so there is nobody you have to trust. If it saved you from a sketchy upload, you can',
+      why_coffee: 'buy the author a coffee', footer_line: 'Written in Rust. Open source, self-hosted, zero third parties.',
+      coffee: 'Buy me a coffee', source: 'Source code', logout: 'Sign out',
+      pk_pages: 'Pages', pk_all: 'All', pk_none: 'None', pk_odd: 'Odd', pk_even: 'Even', pk_invert: 'Invert', pk_rotate_all: 'Rotate all 90°',
+      pk_loading: 'Rendering pages…', cancel: 'Cancel', apply: 'Apply',
+      login_title: 'Access token required', login_text: 'This server was started with an access token. Enter it once; it is kept in a cookie for this browser only.',
+      login_placeholder: 'Access token', login_btn: 'Sign in',
+      // dynamic
+      files_n: (n) => `${n} file${n === 1 ? '' : 's'}`, pages_n: (n) => `${n} page${n === 1 ? '' : 's'}`,
+      pages_of: (sel, total) => `pages ${sel} of ${total}`, added_n: (n) => `Added ${n} file${n === 1 ? '' : 's'}`,
+      skipped_n: (n, names) => `Skipped ${n} unsupported file${n === 1 ? '' : 's'} (${names})`,
+      dup_n: (n) => `${n} file${n === 1 ? ' is' : 's are'} already in the list`,
+      restored_n: (n) => `Restored ${n} file${n === 1 ? '' : 's'} from your last session`,
+      up: 'Move up', down: 'Move down', remove: 'Remove', rotate: 'Rotate 90°', pages_btn: 'Choose pages',
+      needs_pw: 'Password-protected.', unlock: 'Unlock', wrong_pw: 'Wrong password', pw_placeholder: 'Password',
+      reading_folder: 'Reading folder…', sending: (p) => `Sending to local server… ${p}%`, queued: 'Waiting for a free slot…',
+      merging: 'Merging…', step_of: (s, t, l) => `${l} (${s}/${t})`,
+      done_title: (n, name) => `Merged ${n} file${n === 1 ? '' : 's'} → ${name}`,
+      done_info: (size, secs) => `${size} · ${secs}s · your list is still here, so you can adjust and merge again.`,
+      server_unreachable: 'Could not reach the local server. Is it still running?',
+      upload_limit: "The files exceed the server's upload limit. Restart with a higher --max-upload-mb or use the folder mode.",
+      moved_to: (name, pos) => `${name} moved to position ${pos}`, rotated_to: (name, deg) => `${name} rotated to ${deg}°`, removed: (name) => `${name} removed`,
+      no_files_in_folder: 'No supported files found in that folder.', from_folder: (n) => `Added ${n} file${n === 1 ? '' : 's'} from folder`,
+      selected_of: (n, t) => `${n} of ${t} pages selected`, thumbs_failed: 'Previews are not available for this file; you can still pick pages by number.',
+      rot_badge: (d) => `↻ ${d}°`, rot_pages: (list) => `↻ p. ${list}`, first_n_previews: (n) => `Previews shown for the first ${n} pages; use the range box for the rest.`,
+    },
+    es: {
+      tagline: 'Une PDF e imágenes en un solo PDF. Funciona en tu equipo y no habla con nadie.',
+      badge: 'Sin conexión · nada sale de este equipo',
+      badge_title: 'El navegador tiene instrucciones (Content-Security-Policy) de rechazar cualquier conexión que no sea a este servidor local.',
+      drop_title: 'Suelta aquí PDF, imágenes o carpetas enteras',
+      drop_formats: 'PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — cualquier cantidad, cualquier orden.',
+      add_files: 'Añadir archivos', add_folder: 'Añadir carpeta',
+      drop_hint: 'Los archivos se leen en memoria, se unen y se te devuelven. Sin subidas a ninguna nube, sin analítica, sin telemetría.',
+      merge_order: 'Orden de unión', sort_az: 'Ordenar A→Z', sort_az_title: 'Ordenar por nombre (orden natural)', reverse: 'Invertir', clear: 'Vaciar',
+      empty: 'Aún no hay nada. Arrastra para reordenar; el orden de la lista es el orden de las páginas. Teclado: Alt+↑/↓ mover, R girar, P páginas, Supr quitar.',
+      page_size: 'Tamaño de página para imágenes', ps_fit: 'Igual a la imagen (usa DPI)', ps_a4: 'A4 (orientación automática)', ps_letter: 'Carta (orientación automática)',
+      page_size_help: 'Solo afecta a imágenes. Las páginas PDF conservan su tamaño.',
+      margin: 'Margen de imagen (pt)', margin_help: 'Con A4 / Carta. 72 pt = 1 pulgada.',
+      out_name: 'Nombre del archivo', out_name_help: 'Se guarda mediante la descarga del navegador.',
+      doc_props: 'Propiedades del documento', meta_title: 'Título', meta_author: 'Autor', meta_subject: 'Asunto', meta_keywords: 'Palabras clave',
+      advanced: 'Avanzado', opt_bookmarks: 'Marcador por archivo', opt_outlines: 'Conservar índices de origen', opt_forms: 'Unir campos de formulario',
+      opt_optimize: 'Deduplicar y comprimir', opt_dpi: 'Usar DPI de la imagen para el tamaño',
+      merge_btn: 'Unir en PDF', download_again: 'Descargar de nuevo', requeue: 'Añadir resultado a la lista',
+      requeue_title: 'Pone el PDF resultante al final de la lista para seguir uniendo',
+      folder_title: 'Unir una carpeta del disco de este servidor', folder_recursive: 'incluir subcarpetas', folder_scan: 'Explorar y añadir',
+      folder_note: 'El proceso del servidor lee los archivos directamente en orden natural (1, 2, 10) y los añade a la lista. Útil cuando el navegador está en el mismo equipo o los archivos son demasiado grandes para subirlos.',
+      why_title: 'Por qué existe esto',
+      why_1: 'No subas extractos bancarios, contratos, documentos de identidad, declaraciones de impuestos ni historiales médicos a webs aleatorias de "unir PDF gratis".',
+      why_2: 'No sabes quién las gestiona, adónde van tus archivos, cuánto tiempo los guardan ni a quién se venden.',
+      why_3: 'Unir un PDF no necesita internet. Esta herramienta hace lo mismo en tu propio equipo, con el navegador bloqueado para hablar con cualquier otro sitio, así que no hay nadie en quien confiar. Si te ha ahorrado una subida dudosa, puedes',
+      why_coffee: 'invitar al autor a un café', footer_line: 'Escrito en Rust. Código abierto, autoalojado, cero terceros.',
+      coffee: 'Invítame a un café', source: 'Código fuente', logout: 'Cerrar sesión',
+      pk_pages: 'Páginas', pk_all: 'Todas', pk_none: 'Ninguna', pk_odd: 'Impares', pk_even: 'Pares', pk_invert: 'Invertir', pk_rotate_all: 'Girar todas 90°',
+      pk_loading: 'Generando vistas previas…', cancel: 'Cancelar', apply: 'Aplicar',
+      login_title: 'Se requiere token de acceso', login_text: 'Este servidor se inició con un token de acceso. Introdúcelo una vez; se guarda en una cookie solo en este navegador.',
+      login_placeholder: 'Token de acceso', login_btn: 'Entrar',
+      files_n: (n) => `${n} archivo${n === 1 ? '' : 's'}`, pages_n: (n) => `${n} página${n === 1 ? '' : 's'}`,
+      pages_of: (sel, total) => `páginas ${sel} de ${total}`, added_n: (n) => `${n} archivo${n === 1 ? '' : 's'} añadido${n === 1 ? '' : 's'}`,
+      skipped_n: (n, names) => `${n} archivo${n === 1 ? '' : 's'} no compatible${n === 1 ? '' : 's'} omitido${n === 1 ? '' : 's'} (${names})`,
+      dup_n: (n) => `${n} archivo${n === 1 ? ' ya está' : 's ya están'} en la lista`,
+      restored_n: (n) => `${n} archivo${n === 1 ? '' : 's'} restaurado${n === 1 ? '' : 's'} de la sesión anterior`,
+      up: 'Subir', down: 'Bajar', remove: 'Quitar', rotate: 'Girar 90°', pages_btn: 'Elegir páginas',
+      needs_pw: 'Protegido con contraseña.', unlock: 'Desbloquear', wrong_pw: 'Contraseña incorrecta', pw_placeholder: 'Contraseña',
+      reading_folder: 'Leyendo carpeta…', sending: (p) => `Enviando al servidor local… ${p}%`, queued: 'Esperando turno…',
+      merging: 'Uniendo…', step_of: (s, t, l) => `${l} (${s}/${t})`,
+      done_title: (n, name) => `${n} archivo${n === 1 ? '' : 's'} unido${n === 1 ? '' : 's'} → ${name}`,
+      done_info: (size, secs) => `${size} · ${secs}s · la lista sigue aquí para ajustar y volver a unir.`,
+      server_unreachable: 'No se pudo contactar con el servidor local. ¿Sigue en marcha?',
+      upload_limit: 'Los archivos superan el límite de subida del servidor. Reinícialo con un --max-upload-mb mayor o usa el modo carpeta.',
+      moved_to: (name, pos) => `${name} movido a la posición ${pos}`, rotated_to: (name, deg) => `${name} girado a ${deg}°`, removed: (name) => `${name} quitado`,
+      no_files_in_folder: 'No se encontraron archivos compatibles en esa carpeta.', from_folder: (n) => `${n} archivo${n === 1 ? '' : 's'} añadido${n === 1 ? '' : 's'} desde la carpeta`,
+      selected_of: (n, t) => `${n} de ${t} páginas seleccionadas`, thumbs_failed: 'No hay vistas previas para este archivo; puedes elegir páginas por número.',
+      rot_badge: (d) => `↻ ${d}°`, rot_pages: (list) => `↻ pág. ${list}`, first_n_previews: (n) => `Se muestran vistas previas de las primeras ${n} páginas; usa el cuadro de rango para el resto.`,
+    },
+  };
+  let lang = 'en';
+  try { const stored = localStorage.getItem('cfm_lang'); lang = stored || ((navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en'); } catch (_) {}
+  if (!STRINGS[lang]) lang = 'en';
+  const t = (key, ...args) => { const v = STRINGS[lang][key] ?? STRINGS.en[key] ?? key; return typeof v === 'function' ? v(...args) : v; };
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => { el.title = t(el.dataset.i18nTitle); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    $('lang').value = lang;
+    render();
+  }
+
+  // ---------- state ----------
+  /** @type {Array<Item>} */
   let items = [];
   let nextId = 1;
-  let lastResultUrl = null;
-  let lastResultBlob = null;
-  let lastResultName = 'merged.pdf';
+  let lastResultUrl = null, lastResultBlob = null, lastResultName = 'merged.pdf';
+  let busy = false;
 
-  const els = {
-    drop: $('drop'), files: $('files'), empty: $('empty'), queueMeta: $('queueMeta'),
-    merge: $('merge'), progress: $('progress'), status: $('status'), error: $('error'),
-    result: $('result'), resultTitle: $('resultTitle'), resultInfo: $('resultInfo'), download: $('download'),
-    fileInput: $('fileInput'), folderInput: $('folderInput'), pageSize: $('pageSize'), margin: $('margin'),
-    outName: $('outName'), folderPanel: $('folderPanel'), folderPath: $('folderPath'), folderRecursive: $('folderRecursive'),
-    folderScan: $('folderScan'), folderRootNote: $('folderRootNote'), toast: $('toast'), requeue: $('requeue'), version: $('version'),
-  };
+  const els = {};
+  ['drop','files','empty','queueMeta','merge','progress','status','error','result','resultTitle','resultInfo','download','fileInput','folderInput',
+   'pageSize','margin','outName','folderPanel','folderPath','folderRecursive','folderScan','folderRootNote','toast','requeue','version','announce',
+   'metaTitle','metaAuthor','metaSubject','metaKeywords','optBookmarks','optOutlines','optForms','optOptimize','optDpi',
+   'picker','pickerTitle','pickerClose','pickerRange','pickerGrid','pickerLoading','pickerCount','pickerCancel','pickerApply','pickerRotateAll',
+   'loginOverlay','loginForm','loginToken','loginError','logout','lang','propsDetails','advDetails'].forEach((id) => { els[id] = $(id); });
 
   // ---------- helpers ----------
   const ext = (name) => { const i = name.lastIndexOf('.'); return i > 0 ? name.slice(i + 1).toLowerCase() : ''; };
-  const kindOf = (name) => ext(name) === 'pdf' ? 'pdf' : 'image';
   const fmtSize = (n) => { const u = ['B','KB','MB','GB']; let i = 0; let v = n; while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; } return i ? `${v.toFixed(1)} ${u[i]}` : `${n} B`; };
   const naturalCmp = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   let toastTimer;
-  const toast = (msg) => { els.toast.textContent = msg; els.toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove('on'), 2600); };
+  const toast = (msg) => { els.toast.textContent = msg; els.toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove('on'), 2800); };
+  const announce = (msg) => { els.announce.textContent = ''; setTimeout(() => { els.announce.textContent = msg; }, 30); };
   const showError = (msg) => { els.error.textContent = msg; els.error.hidden = false; };
   const clearError = () => { els.error.hidden = true; els.error.textContent = ''; };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></svg>';
   const ICON_IMG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>';
   const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>';
   const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
   const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  const ICON_ROT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
+  const ICON_PAGES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="9" rx="1"/><rect x="14" y="4" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="4" rx="1"/><rect x="14" y="16" width="7" height="4" rx="1"/></svg>';
+
+  // ---------- server ----------
+  let serverConfig = { auth_required: false, authenticated: true, local_folders: false };
+  async function api(url, options = {}) {
+    const res = await fetch(url, options);
+    if (res.status === 401) { showLogin(); throw Object.assign(new Error('unauthorized'), { code: 'unauthorized' }); }
+    return res;
+  }
+  async function loadConfig() {
+    try {
+      const res = await fetch('/api/config');
+      serverConfig = await res.json();
+      els.version.textContent = 'v' + serverConfig.version;
+      els.folderPanel.hidden = !serverConfig.local_folders;
+      els.folderRootNote.textContent = serverConfig.folder_root ? `(${serverConfig.folder_root})` : '';
+      els.logout.hidden = !serverConfig.auth_required;
+      if (serverConfig.auth_required && !serverConfig.authenticated) showLogin(); else hideLogin();
+    } catch (_) {}
+  }
+  function showLogin() { els.loginOverlay.hidden = false; setTimeout(() => els.loginToken.focus(), 50); }
+  function hideLogin() { els.loginOverlay.hidden = true; }
+  els.loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    els.loginError.hidden = true;
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: els.loginToken.value }) });
+    if (res.ok) { els.loginToken.value = ''; await loadConfig(); inspectPending(); }
+    else { const j = await res.json().catch(() => ({})); els.loginError.textContent = j.error || 'Sign-in failed'; els.loginError.hidden = false; }
+  });
+  els.logout.addEventListener('click', async (e) => { e.preventDefault(); await fetch('/api/logout', { method: 'POST' }); await loadConfig(); });
+
+  // ---------- persistence (IndexedDB for files, localStorage for settings) ----------
+  const DB = { name: 'cfm', store: 'queue' };
+  function openDb() {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open(DB.name, 1);
+        req.onupgradeneeded = () => { req.result.createObjectStore(DB.store, { keyPath: 'id' }); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      } catch (_) { resolve(null); }
+    });
+  }
+  let saveTimer;
+  function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(persistNow, 400); }
+  async function persistNow() {
+    const db = await openDb(); if (!db) return;
+    try {
+      const tx = db.transaction(DB.store, 'readwrite'); const st = tx.objectStore(DB.store);
+      st.clear();
+      items.forEach((it, i) => {
+        // Passwords are deliberately not stored.
+        st.put({ id: it.id, order: i, name: it.name, size: it.size, kind: it.kind, file: it.file || null, path: it.path || null, key: it.key, selection: it.selection, rotate: it.rotate, pageRot: it.pageRot, pages: it.pages });
+      });
+      tx.oncomplete = () => db.close();
+    } catch (_) { db.close(); }
+  }
+  async function restore() {
+    const db = await openDb(); if (!db) return;
+    try {
+      const rows = await new Promise((resolve) => { const req = db.transaction(DB.store).objectStore(DB.store).getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => resolve([]); });
+      db.close();
+      rows.sort((a, b) => a.order - b.order);
+      for (const r of rows) {
+        const it = makeItem({ name: r.name, size: r.size, kind: r.kind, file: r.file || undefined, path: r.path || undefined, key: r.key });
+        it.selection = r.selection || null; it.rotate = r.rotate || 0; it.pageRot = r.pageRot || {}; it.pages = r.pages ?? null;
+        items.push(it);
+      }
+      if (rows.length) { toast(t('restored_n', rows.length)); render(); inspectPending(); }
+    } catch (_) { db.close(); }
+  }
+  function saveSettings() {
+    try {
+      localStorage.setItem('cfm_settings', JSON.stringify({
+        pageSize: els.pageSize.value, margin: els.margin.value, outName: els.outName.value,
+        title: els.metaTitle.value, author: els.metaAuthor.value, subject: els.metaSubject.value, keywords: els.metaKeywords.value,
+        bookmarks: els.optBookmarks.checked, outlines: els.optOutlines.checked, forms: els.optForms.checked, optimize: els.optOptimize.checked, dpi: els.optDpi.checked,
+      }));
+    } catch (_) {}
+  }
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('cfm_settings') || 'null'); if (!s) return;
+      if (s.pageSize) els.pageSize.value = s.pageSize; if (s.margin != null) els.margin.value = s.margin; if (s.outName) els.outName.value = s.outName;
+      els.metaTitle.value = s.title || ''; els.metaAuthor.value = s.author || ''; els.metaSubject.value = s.subject || ''; els.metaKeywords.value = s.keywords || '';
+      for (const [k, el] of [['bookmarks', els.optBookmarks], ['outlines', els.optOutlines], ['forms', els.optForms], ['optimize', els.optOptimize], ['dpi', els.optDpi]]) if (typeof s[k] === 'boolean') el.checked = s[k];
+    } catch (_) {}
+  }
+  [els.pageSize, els.margin, els.outName, els.metaTitle, els.metaAuthor, els.metaSubject, els.metaKeywords, els.optBookmarks, els.optOutlines, els.optForms, els.optOptimize, els.optDpi]
+    .forEach((el) => el.addEventListener('change', saveSettings));
 
   // ---------- queue management ----------
+  function makeItem({ name, size, kind, file, path, key }) {
+    const it = { id: nextId++, name, size, kind, file, path, key, thumb: null, pages: null, pageSizes: [], selection: null, rotate: 0, pageRot: {}, password: '', needsPassword: false, wrongPassword: false, inspected: false, allThumbs: null };
+    if (file && kind === 'image' && !SERVER_THUMB.has(ext(name)) && size < 40 * 1024 * 1024) { try { it.thumb = URL.createObjectURL(file); } catch (_) {} }
+    return it;
+  }
   function addFiles(fileList, opts = {}) {
     const files = Array.from(fileList);
-    const accepted = [], rejected = [];
+    const accepted = [], rejected = [], dups = [];
+    const keys = new Set(items.map((x) => x.key));
     for (const f of files) {
       const name = f.name || 'file';
       if (name.startsWith('.')) continue;
       if (!SUPPORTED.has(ext(name)) && !(f.type === 'application/pdf' || f.type.startsWith('image/'))) { rejected.push(name); continue; }
-      accepted.push(f);
+      const key = `f:${name}:${f.size}:${f.lastModified || 0}`;
+      if (keys.has(key)) { dups.push(name); continue; }
+      keys.add(key);
+      accepted.push({ f, key });
     }
-    if (opts.sort !== false) accepted.sort((a, b) => naturalCmp(a.webkitRelativePath || a.name, b.webkitRelativePath || b.name));
-    for (const f of accepted) {
+    if (opts.sort !== false) accepted.sort((a, b) => naturalCmp(a.f.webkitRelativePath || a.f.name, b.f.webkitRelativePath || b.f.name));
+    for (const { f, key } of accepted) {
       const kind = f.type === 'application/pdf' || ext(f.name) === 'pdf' ? 'pdf' : 'image';
-      const item = { id: nextId++, name: f.name, size: f.size, kind, file: f };
-      if (kind === 'image' && f.size < 40 * 1024 * 1024 && !/^(tif|tiff)$/.test(ext(f.name))) item.thumb = URL.createObjectURL(f);
-      items.push(item);
+      items.push(makeItem({ name: f.name, size: f.size, kind, file: f, key }));
     }
-    if (rejected.length) toast(`Skipped ${rejected.length} unsupported file${rejected.length > 1 ? 's' : ''} (${rejected.slice(0, 3).join(', ')}${rejected.length > 3 ? ', …' : ''})`);
-    if (accepted.length) toast(`Added ${accepted.length} file${accepted.length > 1 ? 's' : ''}`);
-    render();
+    if (rejected.length) toast(t('skipped_n', rejected.length, rejected.slice(0, 3).join(', ') + (rejected.length > 3 ? ', …' : '')));
+    if (dups.length) toast(t('dup_n', dups.length));
+    if (accepted.length) toast(t('added_n', accepted.length));
+    render(); persist(); inspectPending();
   }
-
   function removeItem(id) {
-    const i = items.findIndex((x) => x.id === id);
-    if (i < 0) return;
-    if (items[i].thumb) URL.revokeObjectURL(items[i].thumb);
-    items.splice(i, 1);
-    render();
+    const i = items.findIndex((x) => x.id === id); if (i < 0) return;
+    const [it] = items.splice(i, 1);
+    if (it.thumb && it.thumb.startsWith('blob:')) URL.revokeObjectURL(it.thumb);
+    announce(t('removed', it.name));
+    render(); persist();
   }
-  function move(id, delta) {
-    const i = items.findIndex((x) => x.id === id);
-    const j = i + delta;
+  function move(id, delta, focus) {
+    const i = items.findIndex((x) => x.id === id); const j = i + delta;
     if (i < 0 || j < 0 || j >= items.length) return;
     [items[i], items[j]] = [items[j], items[i]];
-    render();
+    announce(t('moved_to', items[j].name, j + 1));
+    render(); persist();
+    if (focus) { const li = els.files.querySelector(`li[data-id="${id}"]`); if (li) li.focus(); }
   }
   function reorder(fromId, toId, after) {
     if (fromId === toId) return;
-    const from = items.findIndex((x) => x.id === fromId);
-    const [moved] = items.splice(from, 1);
-    let to = items.findIndex((x) => x.id === toId);
-    if (after) to++;
-    items.splice(to, 0, moved);
-    render();
+    const from = items.findIndex((x) => x.id === fromId); const [moved] = items.splice(from, 1);
+    let to = items.findIndex((x) => x.id === toId); if (after) to++;
+    items.splice(to, 0, moved); render(); persist();
+  }
+  function rotateItem(id) {
+    const it = items.find((x) => x.id === id); if (!it) return;
+    it.rotate = (it.rotate + 90) % 360;
+    announce(t('rotated_to', it.name, it.rotate));
+    render(); persist();
+  }
+  function selectionLabel(it) {
+    if (!it.selection || !it.pages) return null;
+    const s = it.selection; const ranges = [];
+    let start = s[0], prev = s[0];
+    for (let i = 1; i <= s.length; i++) {
+      if (i < s.length && s[i] === prev + 1) { prev = s[i]; continue; }
+      ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+      start = s[i]; prev = s[i];
+    }
+    return ranges.join(',');
   }
 
   function render() {
     els.files.innerHTML = '';
     const total = items.reduce((n, x) => n + x.size, 0);
-    els.queueMeta.textContent = items.length ? `${items.length} file${items.length > 1 ? 's' : ''} · ${fmtSize(total)}` : 'empty';
+    els.queueMeta.textContent = items.length ? `${t('files_n', items.length)} · ${fmtSize(total)}` : '';
     els.empty.hidden = items.length > 0;
-    els.merge.disabled = items.length === 0;
-    items.forEach((item, idx) => {
+    els.merge.disabled = items.length === 0 || busy;
+    items.forEach((it, idx) => {
       const li = document.createElement('li');
-      li.className = 'file';
-      li.draggable = true;
-      li.dataset.id = item.id;
+      li.className = 'file'; li.draggable = true; li.dataset.id = it.id; li.tabIndex = 0; li.setAttribute('role', 'listitem');
+      const multi = it.kind === 'pdf' || (it.pages && it.pages > 1);
+      const sel = selectionLabel(it);
+      const pagesText = it.pages == null ? '' : (sel ? t('pages_of', sel, it.pages) : t('pages_n', it.pages));
+      const rotPages = Object.entries(it.pageRot || {}).filter(([, d]) => d).map(([n]) => n);
+      const rotText = [it.rotate ? t('rot_badge', it.rotate) : '', rotPages.length ? t('rot_pages', rotPages.join(',')) : ''].filter(Boolean).join(' · ');
       li.innerHTML = `
         <div class="num">${idx + 1}</div>
-        <div class="thumb">${item.thumb ? `<img alt="" loading="lazy" src="${item.thumb}">` : (item.kind === 'pdf' ? ICON_PDF : ICON_IMG)}</div>
+        <div class="thumb">${it.thumb ? `<img alt="" loading="lazy" src="${it.thumb}" style="transform:rotate(${it.rotate}deg)">` : (it.kind === 'pdf' ? ICON_PDF : ICON_IMG)}</div>
         <div class="info">
-          <div class="name" title=""></div>
-          <div class="sub"><span class="pill ${item.kind}">${item.kind}</span>${item.path ? '<span class="pill server">server</span>' : ''}<span>${fmtSize(item.size)}</span></div>
+          <div class="name"></div>
+          <div class="sub"><span class="pill ${it.kind}">${it.kind}</span>${it.path ? '<span class="pill server">server</span>' : ''}${pagesText ? `<span class="pill sel">${esc(pagesText)}</span>` : ''}${rotText ? `<span class="pill sel">${esc(rotText)}</span>` : ''}<span>${fmtSize(it.size)}</span></div>
         </div>
         <div class="ctl">
-          <button class="icon-btn" data-act="up" title="Move up" ${idx === 0 ? 'disabled' : ''}>${ICON_UP}</button>
-          <button class="icon-btn" data-act="down" title="Move down" ${idx === items.length - 1 ? 'disabled' : ''}>${ICON_DOWN}</button>
-          <button class="icon-btn danger" data-act="remove" title="Remove">${ICON_X}</button>
-        </div>`;
-      const nameEl = li.querySelector('.name');
-      nameEl.textContent = item.name;
-      nameEl.title = item.path || item.name;
+          ${multi ? `<button class="icon-btn" data-act="pages" title="${esc(t('pages_btn'))}" aria-label="${esc(t('pages_btn'))}">${ICON_PAGES}</button>` : ''}
+          <button class="icon-btn" data-act="rotate" title="${esc(t('rotate'))}" aria-label="${esc(t('rotate'))}">${ICON_ROT}</button>
+          <button class="icon-btn" data-act="up" title="${esc(t('up'))}" aria-label="${esc(t('up'))}" ${idx === 0 ? 'disabled' : ''}>${ICON_UP}</button>
+          <button class="icon-btn" data-act="down" title="${esc(t('down'))}" aria-label="${esc(t('down'))}" ${idx === items.length - 1 ? 'disabled' : ''}>${ICON_DOWN}</button>
+          <button class="icon-btn danger" data-act="remove" title="${esc(t('remove'))}" aria-label="${esc(t('remove'))}">${ICON_X}</button>
+        </div>
+        ${it.needsPassword ? `<div class="unlock"><span>🔒 ${esc(t('needs_pw'))}</span><input type="password" data-pw="${it.id}" placeholder="${esc(t('pw_placeholder'))}" autocomplete="off"><button class="btn small" data-act="unlock">${esc(t('unlock'))}</button>${it.wrongPassword ? `<span class="err">${esc(t('wrong_pw'))}</span>` : ''}</div>` : ''}`;
+      const nameEl = li.querySelector('.name'); nameEl.textContent = it.name; nameEl.title = it.path || it.name;
+      li.setAttribute('aria-label', `${idx + 1}. ${it.name}${pagesText ? ', ' + pagesText : ''}`);
       els.files.appendChild(li);
     });
   }
 
   els.files.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-act]');
-    if (!btn) return;
-    const id = Number(btn.closest('li').dataset.id);
-    if (btn.dataset.act === 'up') move(id, -1);
-    else if (btn.dataset.act === 'down') move(id, 1);
-    else removeItem(id);
+    const btn = e.target.closest('button[data-act]'); if (!btn) return;
+    const li = btn.closest('li'); const id = Number(li.dataset.id);
+    switch (btn.dataset.act) {
+      case 'up': move(id, -1); break;
+      case 'down': move(id, 1); break;
+      case 'remove': removeItem(id); break;
+      case 'rotate': rotateItem(id); break;
+      case 'pages': openPicker(id); break;
+      case 'unlock': unlock(id, li.querySelector('input[data-pw]').value); break;
+    }
+  });
+  els.files.addEventListener('keydown', (e) => {
+    if (e.target.matches('input')) { if (e.key === 'Enter') { const li = e.target.closest('li'); unlock(Number(li.dataset.id), e.target.value); } return; }
+    const li = e.target.closest('li.file'); if (!li) return;
+    const id = Number(li.dataset.id);
+    if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); move(id, -1, true); }
+    else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); move(id, 1, true); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); const next = li.nextElementSibling || li.previousElementSibling; removeItem(id); if (next) { const again = els.files.querySelector(`li[data-id="${next.dataset.id}"]`); if (again) again.focus(); } }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); rotateItem(id); els.files.querySelector(`li[data-id="${id}"]`)?.focus(); }
+    else if (e.key === 'p' || e.key === 'P') { e.preventDefault(); openPicker(id); }
+    else if (e.key === 'ArrowDown' && !e.altKey) { e.preventDefault(); li.nextElementSibling?.focus(); }
+    else if (e.key === 'ArrowUp' && !e.altKey) { e.preventDefault(); li.previousElementSibling?.focus(); }
   });
 
   // Drag-to-reorder within the list.
   let dragId = null;
-  els.files.addEventListener('dragstart', (e) => {
-    const li = e.target.closest('li.file');
-    if (!li) return;
-    dragId = Number(li.dataset.id);
-    li.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(dragId));
-  });
-  els.files.addEventListener('dragend', () => {
-    dragId = null;
-    els.files.querySelectorAll('li').forEach((li) => li.classList.remove('dragging', 'drop-before', 'drop-after'));
-  });
+  els.files.addEventListener('dragstart', (e) => { const li = e.target.closest('li.file'); if (!li) return; dragId = Number(li.dataset.id); li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragId)); });
+  els.files.addEventListener('dragend', () => { dragId = null; els.files.querySelectorAll('li').forEach((li) => li.classList.remove('dragging', 'drop-before', 'drop-after')); });
   els.files.addEventListener('dragover', (e) => {
-    if (dragId === null) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const li = e.target.closest('li.file');
-    els.files.querySelectorAll('li').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
-    if (!li) return;
-    const rect = li.getBoundingClientRect();
-    li.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-before' : 'drop-after');
+    if (dragId === null) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    const li = e.target.closest('li.file'); els.files.querySelectorAll('li').forEach((x) => x.classList.remove('drop-before', 'drop-after'));
+    if (!li) return; const rect = li.getBoundingClientRect(); li.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-before' : 'drop-after');
   });
   els.files.addEventListener('drop', (e) => {
-    if (dragId === null) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const li = e.target.closest('li.file');
-    if (li) {
-      const after = li.classList.contains('drop-after');
-      reorder(dragId, Number(li.dataset.id), after);
-    }
-    dragId = null;
+    if (dragId === null) return; e.preventDefault(); e.stopPropagation();
+    const li = e.target.closest('li.file'); if (li) reorder(dragId, Number(li.dataset.id), li.classList.contains('drop-after')); dragId = null;
   });
 
   // ---------- adding files: pickers, drop zone (incl. dropped folders) ----------
@@ -453,166 +762,275 @@
   $('pickFolder').addEventListener('click', () => els.folderInput.click());
   els.fileInput.addEventListener('change', () => { addFiles(els.fileInput.files); els.fileInput.value = ''; });
   els.folderInput.addEventListener('change', () => { addFiles(els.folderInput.files); els.folderInput.value = ''; });
-
   let dragDepth = 0;
   const isExternalDrag = (e) => dragId === null && e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
   document.addEventListener('dragenter', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); dragDepth++; els.drop.classList.add('over'); });
   document.addEventListener('dragleave', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); if (--dragDepth <= 0) { dragDepth = 0; els.drop.classList.remove('over'); } });
   document.addEventListener('dragover', (e) => { if (!isExternalDrag(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
   document.addEventListener('drop', async (e) => {
-    if (!isExternalDrag(e)) return;
-    e.preventDefault();
-    dragDepth = 0;
-    els.drop.classList.remove('over');
+    if (!isExternalDrag(e)) return; e.preventDefault(); dragDepth = 0; els.drop.classList.remove('over');
     const dt = e.dataTransfer;
     const entries = dt.items ? Array.from(dt.items).map((it) => it.webkitGetAsEntry ? it.webkitGetAsEntry() : null) : [];
     if (entries.some((en) => en && en.isDirectory)) {
-      els.status.textContent = 'Reading folder…';
-      const files = [];
+      els.status.textContent = t('reading_folder'); const files = [];
       for (const en of entries) if (en) await walkEntry(en, files);
-      els.status.textContent = '';
-      addFiles(files);
-    } else {
-      addFiles(dt.files);
-    }
+      els.status.textContent = ''; addFiles(files);
+    } else addFiles(dt.files);
   });
-
   function walkEntry(entry, out) {
     return new Promise((resolve) => {
       if (entry.isFile) {
-        entry.file((f) => {
-          // Keep the relative path so folder trees sort sensibly.
-          try { Object.defineProperty(f, 'webkitRelativePath', { value: entry.fullPath.replace(/^\//, '') }); } catch (_) {}
-          out.push(f); resolve();
-        }, () => resolve());
+        entry.file((f) => { try { Object.defineProperty(f, 'webkitRelativePath', { value: entry.fullPath.replace(/^\//, '') }); } catch (_) {} out.push(f); resolve(); }, () => resolve());
       } else if (entry.isDirectory) {
         const reader = entry.createReader();
-        const batch = () => reader.readEntries(async (ents) => {
-          if (!ents.length) return resolve();
-          for (const en of ents) if (!en.name.startsWith('.')) await walkEntry(en, out);
-          batch();
-        }, () => resolve());
+        const batch = () => reader.readEntries(async (ents) => { if (!ents.length) return resolve(); for (const en of ents) if (!en.name.startsWith('.')) await walkEntry(en, out); batch(); }, () => resolve());
         batch();
       } else resolve();
     });
   }
 
   // ---------- list tools ----------
-  $('sortAz').addEventListener('click', () => { items.sort((a, b) => naturalCmp(a.name, b.name)); render(); });
-  $('reverse').addEventListener('click', () => { items.reverse(); render(); });
-  $('clear').addEventListener('click', () => { items.forEach((x) => x.thumb && URL.revokeObjectURL(x.thumb)); items = []; render(); });
+  $('sortAz').addEventListener('click', () => { items.sort((a, b) => naturalCmp(a.name, b.name)); render(); persist(); });
+  $('reverse').addEventListener('click', () => { items.reverse(); render(); persist(); });
+  $('clear').addEventListener('click', () => { items.forEach((x) => x.thumb && x.thumb.startsWith('blob:') && URL.revokeObjectURL(x.thumb)); items = []; render(); persist(); });
 
-  // ---------- merging ----------
-  let busy = false;
-  els.merge.addEventListener('click', () => {
-    if (busy || !items.length) return;
-    clearError();
-    els.result.hidden = true;
+  // ---------- inspection (page counts, previews, passwords) ----------
+  let inspecting = 0;
+  function inspectPending() {
+    if (serverConfig.auth_required && !serverConfig.authenticated) return;
+    for (const it of items) {
+      if (it.inspected || it.inspecting || it.needsPassword) continue;
+      if (inspecting >= 2) break;
+      inspectItem(it);
+    }
+  }
+  function inspectForm(it, extra = {}) {
     const form = new FormData();
-    form.append('page_size', els.pageSize.value);
-    form.append('margin', els.margin.value || '0');
-    form.append('output_name', els.outName.value || 'merged.pdf');
-    for (const item of items) {
-      if (item.file) form.append('file', item.file, item.name);
-      else if (item.path) form.append('path', item.path);
-    }
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/merge');
-    xhr.responseType = 'blob';
-    busy = true;
-    els.merge.disabled = true;
-    els.progress.classList.add('on');
-    els.progress.classList.remove('busy');
-    els.progress.firstElementChild.style.width = '0%';
-    const started = performance.now();
-    xhr.upload.onprogress = (e) => {
-      if (!e.lengthComputable) return;
-      const pct = Math.round((e.loaded / e.total) * 100);
-      els.progress.firstElementChild.style.width = pct + '%';
-      els.status.textContent = pct < 100 ? `Sending to local server… ${pct}%` : 'Merging…';
-      if (pct >= 100) els.progress.classList.add('busy');
-    };
-    xhr.onerror = () => finish(new Error('Could not reach the local server. Is it still running?'));
-    xhr.onload = async () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const blob = xhr.response;
-        const dispo = xhr.getResponseHeader('Content-Disposition') || '';
-        const m = /filename\*=UTF-8''([^;]+)/.exec(dispo) || /filename="([^"]+)"/.exec(dispo);
-        const name = m ? decodeURIComponent(m[1]) : (els.outName.value || 'merged.pdf');
-        deliver(blob, name, performance.now() - started);
-        finish();
-      } else {
-        let msg = `Merge failed (HTTP ${xhr.status}).`;
-        try { const j = JSON.parse(await xhr.response.text()); if (j.error) msg = j.error; } catch (_) {}
-        if (xhr.status === 413) msg = 'The files exceed the server\'s upload limit. Restart with a higher --max-upload-mb or use the folder mode.';
-        finish(new Error(msg));
+    if (it.file) form.append('file', it.file, it.name); else form.append('path', it.path);
+    if (it.password) form.append('password', it.password);
+    for (const [k, v] of Object.entries(extra)) form.append(k, v);
+    return form;
+  }
+  async function inspectItem(it, password) {
+    it.inspecting = true; inspecting++;
+    try {
+      if (password !== undefined) it.password = password;
+      const wantThumb = SERVER_THUMB.has(ext(it.name)) || it.kind === 'pdf' || !it.thumb;
+      const res = await api('/api/inspect', { method: 'POST', body: inspectForm(it, { thumbs: wantThumb ? 'first' : 'none', max_edge: 112 }) });
+      const body = await res.json();
+      if (!res.ok) {
+        if (body.code === 'encrypted' || body.code === 'wrong_password') { it.needsPassword = true; it.wrongPassword = body.code === 'wrong_password'; it.password = ''; }
+        else { it.inspected = true; it.error = body.error; }
+        return;
       }
-    };
-    xhr.send(form);
-
-    function finish(err) {
-      busy = false;
-      els.merge.disabled = items.length === 0;
-      els.progress.classList.remove('on', 'busy');
-      els.status.textContent = '';
-      if (err) showError(err.message);
+      it.pages = body.pages; it.pageSizes = body.page_sizes || []; it.needsPassword = false; it.wrongPassword = false; it.inspected = true;
+      if (body.thumbs && body.thumbs.length) it.thumb = body.thumbs[0];
+      if (it.selection && it.selection.some((p) => p > it.pages)) it.selection = null;
+    } catch (_) {
+      // Server unreachable or unauthorized: leave it un-inspected; it will be retried.
+    } finally {
+      it.inspecting = false; inspecting--; render(); persist(); inspectPending();
     }
-  });
-
-  function deliver(blob, name, ms) {
-    if (lastResultUrl) URL.revokeObjectURL(lastResultUrl);
-    lastResultUrl = URL.createObjectURL(blob);
-    lastResultBlob = blob;
-    lastResultName = name;
-    els.download.href = lastResultUrl;
-    els.download.download = name;
-    els.resultTitle.textContent = `Merged ${items.length} file${items.length > 1 ? 's' : ''} → ${name}`;
-    els.resultInfo.textContent = `${fmtSize(blob.size)} · ${(ms / 1000).toFixed(1)}s · your list is still here, so you can adjust and merge again.`;
-    els.result.hidden = false;
-    // Kick off the browser download.
-    const a = document.createElement('a');
-    a.href = lastResultUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function unlock(id, password) {
+    const it = items.find((x) => x.id === id); if (!it || !password) return;
+    it.needsPassword = false; it.wrongPassword = false;
+    inspectItem(it, password);
   }
 
-  els.requeue.addEventListener('click', () => {
-    if (!lastResultBlob) return;
-    const f = new File([lastResultBlob], lastResultName, { type: 'application/pdf' });
-    addFiles([f], { sort: false });
+  // ---------- page picker ----------
+  let picker = null; // { item, total, selected:Set, rot:{}, order:[] }
+  async function openPicker(id) {
+    const it = items.find((x) => x.id === id); if (!it) return;
+    if (it.pages == null) { await inspectItem(it); if (it.pages == null) return; }
+    picker = { item: it, total: it.pages, selected: new Set(it.selection || Array.from({ length: it.pages }, (_, i) => i + 1)), rot: { ...(it.pageRot || {}) }, order: it.selection ? [...it.selection] : null };
+    els.pickerTitle.textContent = it.name;
+    els.pickerRange.value = it.selection ? selectionLabel(it) : '';
+    els.picker.hidden = false; els.pickerGrid.innerHTML = ''; els.pickerLoading.hidden = false;
+    renderPickerGrid([]);
+    if (!it.allThumbs) {
+      try {
+        const res = await api('/api/inspect', { method: 'POST', body: inspectForm(it, { thumbs: 'all', max_edge: 200, max_pages: 300 }) });
+        const body = await res.json();
+        it.allThumbs = res.ok ? (body.thumbs || []) : [];
+        if (res.ok && !it.allThumbs.length) toast(t('thumbs_failed'));
+        if (res.ok && it.allThumbs.length && it.allThumbs.length < it.pages) toast(t('first_n_previews', it.allThumbs.length));
+      } catch (_) { it.allThumbs = []; }
+    }
+    if (picker && picker.item === it) { els.pickerLoading.hidden = true; renderPickerGrid(it.allThumbs); }
+    setTimeout(() => els.pickerRange.focus(), 50);
+  }
+  function renderPickerGrid(thumbs) {
+    if (!picker) return;
+    els.pickerGrid.innerHTML = '';
+    for (let n = 1; n <= picker.total; n++) {
+      const card = document.createElement('div');
+      card.className = 'pg' + (picker.selected.has(n) ? ' on' : ''); card.dataset.page = n; card.tabIndex = 0; card.setAttribute('role', 'checkbox'); card.setAttribute('aria-checked', String(picker.selected.has(n)));
+      const rot = picker.rot[n] || 0;
+      const img = thumbs[n - 1] ? `<img alt="" src="${thumbs[n - 1]}" style="transform:rotate(${(picker.item.rotate + rot) % 360}deg)">` : `<div style="color:var(--ink-3)">${ICON_PDF}</div>`;
+      card.innerHTML = `<input type="checkbox" tabindex="-1" ${picker.selected.has(n) ? 'checked' : ''} aria-hidden="true"><div class="img">${img}</div><div class="lbl"><b>${n}</b>${rot ? `<span class="rot">${esc(t('rot_badge', rot))}</span>` : ''}<button class="icon-btn" data-prot="${n}" title="${esc(t('rotate'))}" aria-label="${esc(t('rotate'))} ${n}">${ICON_ROT}</button></div>`;
+      els.pickerGrid.appendChild(card);
+    }
+    updatePickerCount();
+  }
+  function updatePickerCount() { if (picker) els.pickerCount.textContent = t('selected_of', picker.selected.size, picker.total); }
+  function pickerToggle(n, force) {
+    const on = force === undefined ? !picker.selected.has(n) : force;
+    if (on) picker.selected.add(n); else picker.selected.delete(n);
+    if (picker.order) { picker.order = picker.order.filter((p) => p !== n); if (on) picker.order.push(n); }
+    const card = els.pickerGrid.querySelector(`.pg[data-page="${n}"]`);
+    if (card) { card.classList.toggle('on', on); card.setAttribute('aria-checked', String(on)); card.querySelector('input').checked = on; }
+    updatePickerCount(); syncRangeFromGrid();
+  }
+  function syncRangeFromGrid() {
+    if (!picker) return;
+    const sorted = [...picker.selected].sort((a, b) => a - b);
+    els.pickerRange.value = sorted.length === picker.total ? '' : selectionLabel({ selection: sorted, pages: picker.total }) || '';
+  }
+  function parseRange(text, total) {
+    const spec = text.trim().toLowerCase(); if (!spec || spec === 'all') return Array.from({ length: total }, (_, i) => i + 1);
+    const out = [];
+    for (const raw of spec.split(',')) {
+      const term = raw.trim(); if (!term) continue;
+      if (term === 'odd') { for (let i = 1; i <= total; i += 2) out.push(i); continue; }
+      if (term === 'even') { for (let i = 2; i <= total; i += 2) out.push(i); continue; }
+      if (term === 'last') { out.push(total); continue; }
+      const m = term.match(/^(\d*)\s*-\s*(\d*)$/);
+      if (m) { let a = m[1] ? Number(m[1]) : 1, b = m[2] ? Number(m[2]) : total; if (a < 1 || b < 1 || a > total || b > total) return null; if (a <= b) for (let i = a; i <= b; i++) out.push(i); else for (let i = a; i >= b; i--) out.push(i); continue; }
+      const n = Number(term); if (!Number.isInteger(n) || n < 1 || n > total) return null; out.push(n);
+    }
+    return out;
+  }
+  els.pickerRange.addEventListener('input', () => {
+    if (!picker) return;
+    const pages = parseRange(els.pickerRange.value, picker.total);
+    els.pickerRange.style.borderColor = pages ? '' : 'var(--danger)';
+    if (!pages) return;
+    picker.selected = new Set(pages); picker.order = pages;
+    els.pickerGrid.querySelectorAll('.pg').forEach((card) => { const n = Number(card.dataset.page); const on = picker.selected.has(n); card.classList.toggle('on', on); card.setAttribute('aria-checked', String(on)); card.querySelector('input').checked = on; });
+    updatePickerCount();
   });
+  els.pickerGrid.addEventListener('click', (e) => {
+    const rb = e.target.closest('button[data-prot]');
+    if (rb) { const n = Number(rb.dataset.prot); picker.rot[n] = ((picker.rot[n] || 0) + 90) % 360; renderPickerGrid(picker.item.allThumbs || []); return; }
+    const card = e.target.closest('.pg'); if (card) pickerToggle(Number(card.dataset.page));
+  });
+  els.pickerGrid.addEventListener('keydown', (e) => { const card = e.target.closest('.pg'); if (card && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); pickerToggle(Number(card.dataset.page)); } });
+  document.querySelectorAll('[data-pk]').forEach((btn) => btn.addEventListener('click', () => {
+    if (!picker) return; const all = Array.from({ length: picker.total }, (_, i) => i + 1);
+    const cur = picker.selected;
+    const next = { all: all, none: [], odd: all.filter((n) => n % 2), even: all.filter((n) => !(n % 2)), invert: all.filter((n) => !cur.has(n)) }[btn.dataset.pk];
+    picker.selected = new Set(next); picker.order = null;
+    els.pickerGrid.querySelectorAll('.pg').forEach((card) => { const n = Number(card.dataset.page); const on = picker.selected.has(n); card.classList.toggle('on', on); card.setAttribute('aria-checked', String(on)); card.querySelector('input').checked = on; });
+    updatePickerCount(); syncRangeFromGrid();
+  }));
+  els.pickerRotateAll.addEventListener('click', () => { if (!picker) return; picker.item.rotate = (picker.item.rotate + 90) % 360; renderPickerGrid(picker.item.allThumbs || []); render(); persist(); });
+  function closePicker() { picker = null; els.picker.hidden = true; }
+  els.pickerClose.addEventListener('click', closePicker);
+  els.pickerCancel.addEventListener('click', closePicker);
+  els.picker.addEventListener('click', (e) => { if (e.target === els.picker) closePicker(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !els.picker.hidden) closePicker(); });
+  els.pickerApply.addEventListener('click', () => {
+    if (!picker) return;
+    const it = picker.item;
+    const pages = picker.order && picker.order.length === picker.selected.size ? picker.order.filter((p) => picker.selected.has(p)) : [...picker.selected].sort((a, b) => a - b);
+    it.selection = pages.length === picker.total && pages.every((p, i) => p === i + 1) ? null : pages;
+    it.pageRot = Object.fromEntries(Object.entries(picker.rot).filter(([, d]) => d));
+    closePicker(); render(); persist();
+  });
+
+  // ---------- merging (job with progress) ----------
+  function buildForm() {
+    const form = new FormData();
+    const manifest = {
+      items: items.map((it) => ({ pages: it.selection, rotate: it.rotate, page_rotations: it.pageRot || {}, password: it.password || null })),
+      page_size: els.pageSize.value, margin: Number(els.margin.value || 0), output_name: els.outName.value || 'merged.pdf',
+      use_image_dpi: els.optDpi.checked, bookmarks: els.optBookmarks.checked, keep_outlines: els.optOutlines.checked, merge_forms: els.optForms.checked, optimize: els.optOptimize.checked,
+      metadata: { title: els.metaTitle.value || null, author: els.metaAuthor.value || null, subject: els.metaSubject.value || null, keywords: els.metaKeywords.value || null },
+    };
+    form.append('manifest', JSON.stringify(manifest));
+    for (const it of items) { if (it.file) form.append('file', it.file, it.name); else if (it.path) form.append('path', it.path); }
+    return form;
+  }
+  function setProgress(frac, label, indeterminate) {
+    els.progress.classList.add('on'); els.progress.classList.toggle('busy', !!indeterminate);
+    els.progress.firstElementChild.style.width = Math.round(frac * 100) + '%'; els.status.textContent = label;
+  }
+  function finish(err) {
+    busy = false; els.merge.disabled = items.length === 0; els.progress.classList.remove('on', 'busy'); els.status.textContent = '';
+    if (err) {
+      showError(err.message);
+      if (err.code === 'encrypted' || err.code === 'wrong_password') {
+        const m = /"([^"]+)"/.exec(err.message); const it = m && items.find((x) => x.name === m[1]);
+        if (it) { it.needsPassword = true; it.wrongPassword = err.code === 'wrong_password'; it.password = ''; render(); }
+      }
+    }
+  }
+  els.merge.addEventListener('click', () => {
+    if (busy || !items.length) return;
+    clearError(); els.result.hidden = true; busy = true; els.merge.disabled = true;
+    const started = performance.now();
+    const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/jobs'); xhr.responseType = 'json';
+    setProgress(0, t('sending', 0));
+    xhr.upload.onprogress = (e) => { if (!e.lengthComputable) return; const pct = Math.round((e.loaded / e.total) * 100); setProgress(pct / 100 * 0.5, t('sending', pct)); };
+    xhr.onerror = () => finish(new Error(t('server_unreachable')));
+    xhr.onload = async () => {
+      if (xhr.status === 401) { showLogin(); return finish(Object.assign(new Error(t('login_title')), { code: 'unauthorized' })); }
+      if (xhr.status === 413) return finish(new Error(t('upload_limit')));
+      if (xhr.status < 200 || xhr.status >= 300) return finish(Object.assign(new Error((xhr.response && xhr.response.error) || `HTTP ${xhr.status}`), { code: xhr.response && xhr.response.code }));
+      const id = xhr.response.id;
+      try {
+        for (;;) {
+          const res = await api(`/api/jobs/${id}`); const st = await res.json();
+          if (st.state === 'queued') setProgress(0.5, t('queued'), true);
+          else if (st.state === 'running') setProgress(0.5 + 0.5 * (st.total ? st.step / st.total : 0), t('step_of', st.step + 1, st.total, st.label));
+          else if (st.state === 'error') return finish(Object.assign(new Error(st.error), { code: st.code }));
+          else if (st.state === 'done') break;
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        setProgress(1, t('merging'));
+        const res = await api(`/api/jobs/${id}/result`);
+        if (!res.ok) { const j = await res.json().catch(() => ({})); return finish(Object.assign(new Error(j.error || `HTTP ${res.status}`), { code: j.code })); }
+        const blob = await res.blob();
+        const dispo = res.headers.get('Content-Disposition') || '';
+        const m = /filename\*=UTF-8''([^;]+)/.exec(dispo) || /filename="([^"]+)"/.exec(dispo);
+        deliver(blob, m ? decodeURIComponent(m[1]) : (els.outName.value || 'merged.pdf'), performance.now() - started);
+        finish();
+      } catch (err) { finish(err.code === 'unauthorized' ? err : new Error(t('server_unreachable'))); }
+    };
+    xhr.send(buildForm());
+  });
+  function deliver(blob, name, ms) {
+    if (lastResultUrl) URL.revokeObjectURL(lastResultUrl);
+    lastResultUrl = URL.createObjectURL(blob); lastResultBlob = blob; lastResultName = name;
+    els.download.href = lastResultUrl; els.download.download = name;
+    els.resultTitle.textContent = t('done_title', items.length, name);
+    els.resultInfo.textContent = t('done_info', fmtSize(blob.size), (ms / 1000).toFixed(1));
+    els.result.hidden = false;
+    const a = document.createElement('a'); a.href = lastResultUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  els.requeue.addEventListener('click', () => { if (!lastResultBlob) return; addFiles([new File([lastResultBlob], lastResultName, { type: 'application/pdf', lastModified: Date.now() })], { sort: false }); });
 
   // ---------- server-side folder mode ----------
   els.folderScan.addEventListener('click', async () => {
-    const path = els.folderPath.value.trim();
-    if (!path) { els.folderPath.focus(); return; }
-    clearError();
-    els.folderScan.disabled = true;
+    const path = els.folderPath.value.trim(); if (!path) { els.folderPath.focus(); return; }
+    clearError(); els.folderScan.disabled = true;
     try {
-      const res = await fetch('/api/folder/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, recursive: els.folderRecursive.checked }) });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
-      if (!body.length) { toast('No supported files found in that folder.'); return; }
-      for (const f of body) items.push({ id: nextId++, name: f.name, size: f.size, kind: f.kind, path: f.path });
-      render();
-      toast(`Added ${body.length} file${body.length > 1 ? 's' : ''} from folder`);
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      els.folderScan.disabled = false;
-    }
+      const res = await api('/api/folder/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, recursive: els.folderRecursive.checked }) });
+      const body = await res.json(); if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+      if (!body.length) { toast(t('no_files_in_folder')); return; }
+      const keys = new Set(items.map((x) => x.key)); let added = 0;
+      for (const f of body) { const key = `p:${f.path}`; if (keys.has(key)) continue; keys.add(key); items.push(makeItem({ name: f.name, size: f.size, kind: f.kind, path: f.path, key })); added++; }
+      render(); persist(); inspectPending(); toast(t('from_folder', added));
+    } catch (err) { if (err.code !== 'unauthorized') showError(err.message); } finally { els.folderScan.disabled = false; }
   });
   els.folderPath.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.folderScan.click(); });
 
   // ---------- startup ----------
-  fetch('/api/config').then((r) => r.json()).then((cfg) => {
-    els.version.textContent = 'v' + cfg.version;
-    if (cfg.local_folders) {
-      els.folderPanel.hidden = false;
-      els.folderRootNote.textContent = cfg.folder_root ? `(inside ${cfg.folder_root})` : '';
-    }
-  }).catch(() => {});
-
+  els.lang.addEventListener('change', () => { lang = els.lang.value; try { localStorage.setItem('cfm_lang', lang); } catch (_) {} applyLang(); });
   window.addEventListener('beforeunload', (e) => { if (busy) { e.preventDefault(); e.returnValue = ''; } });
-  render();
+  loadSettings(); applyLang();
+  loadConfig().then(() => restore());
 })();
 </script>
 </body>
