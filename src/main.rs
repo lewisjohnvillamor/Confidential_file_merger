@@ -7,6 +7,7 @@ mod images;
 mod merge;
 mod pagespec;
 mod preview;
+mod sign;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -54,6 +55,50 @@ struct Cli {
 enum Command {
     /// Merge files and folders from the command line, no browser needed.
     Merge(MergeArgs),
+    /// Stamp a transparent signature image onto pages of a PDF.
+    Sign(SignArgs),
+}
+
+#[derive(clap::Args, Debug)]
+struct SignArgs {
+    /// Output PDF path.
+    #[arg(short, long)]
+    output: PathBuf,
+
+    /// The PDF to sign. May carry `?password=` like merge inputs.
+    input: String,
+
+    /// Signature image (PNG with transparency works best; white backgrounds are kept as-is).
+    #[arg(short, long)]
+    signature: PathBuf,
+
+    /// Pages to stamp: a selection such as `last`, `1`, `1-3,odd`, or `all`.
+    #[arg(long, default_value = "last")]
+    pages: String,
+
+    /// Centre of the stamp as fractions of the displayed page, `x,y` from the top-left.
+    #[arg(long, default_value = "0.7,0.85", value_parser = parse_pair)]
+    at: (f64, f64),
+
+    /// Width of the stamp as a fraction of the page width; height follows the image's aspect.
+    #[arg(long, default_value_t = 0.25)]
+    width: f64,
+
+    /// Rotation in degrees, clockwise.
+    #[arg(long, default_value_t = 0.0)]
+    angle: f64,
+}
+
+fn parse_pair(s: &str) -> Result<(f64, f64), String> {
+    let (a, b) = s
+        .split_once(',')
+        .ok_or_else(|| "expected two numbers separated by a comma, e.g. 0.7,0.85".to_string())?;
+    let parse = |v: &str| {
+        v.trim()
+            .parse::<f64>()
+            .map_err(|_| format!("\"{v}\" is not a number"))
+    };
+    Ok((parse(a)?, parse(b)?))
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
@@ -180,6 +225,7 @@ async fn main() {
     let cli = Cli::parse();
     let result = match cli.command {
         Some(Command::Merge(args)) => run_merge_cli(args),
+        Some(Command::Sign(args)) => run_sign_cli(args),
         None => serve(cli.serve).await,
     };
     if let Err(err) = result {
@@ -232,6 +278,46 @@ fn run_merge_cli(args: MergeArgs) -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "Merged {} file(s) into {} ({})",
         inputs.len(),
+        args.output.display(),
+        human_size(pdf.len())
+    );
+    Ok(())
+}
+
+fn run_sign_cli(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let (path, spec) = pagespec::parse_input_arg(&args.input)?;
+    let mut input = read_input(Path::new(&path))?;
+    input.password = spec.password;
+    let signature = std::fs::read(&args.signature)?;
+    let (sig_w, sig_h) = image::load_from_memory(&signature)
+        .map(|img| (img.width() as f64, img.height() as f64))
+        .map_err(|e| format!("{}: {e}", args.signature.display()))?;
+
+    // Height follows the image's aspect ratio on each page's own dimensions.
+    let (doc, _) = merge::load_pdf(&input)?;
+    let pages = doc.get_pages();
+    let selected = pagespec::parse_page_spec(&args.pages, pages.len() as u32)?;
+    let mut placements = Vec::new();
+    for page_no in selected {
+        let (pw, ph) = merge::page_size_pt(&doc, pages[&page_no]);
+        let width_pt = args.width * pw as f64;
+        let height_pt = width_pt * sig_h / sig_w;
+        placements.push(sign::Placement {
+            page: page_no,
+            image: 0,
+            cx: args.at.0,
+            cy: args.at.1,
+            width: args.width,
+            height: height_pt / ph as f64,
+            angle: args.angle,
+        });
+    }
+    let pdf = sign::sign(&input, &[signature], &placements)?;
+    std::fs::write(&args.output, &pdf)?;
+    println!(
+        "Signed {} page(s) of {} into {} ({})",
+        placements.len(),
+        path,
         args.output.display(),
         human_size(pdf.len())
     );
@@ -425,6 +511,7 @@ async fn serve(args: ServeArgs) -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/jobs/:id", get(job_status).delete(job_delete))
         .route("/api/jobs/:id/result", get(job_result))
         .route("/api/inspect", post(inspect_handler))
+        .route("/api/sign", post(sign_handler))
         .route("/api/folder/scan", post(folder_scan))
         .layer(middleware::from_fn_with_state(
             Arc::clone(&state),
@@ -1299,6 +1386,14 @@ async fn inspect_handler(
                     thumbs = Thumbs::All(max_pages);
                 }
             }
+            "page" => {
+                let raw = field
+                    .text()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                let page = raw.trim().parse::<usize>().unwrap_or(1).max(1);
+                thumbs = Thumbs::Page(page - 1);
+            }
             _ => {
                 let _ = field.bytes().await;
             }
@@ -1318,6 +1413,112 @@ async fn inspect_handler(
     .map_err(|e| ApiError::bad_request(format!("Inspect task failed: {e}")))?
     .map_err(|e| ApiError::from_merge(&e))?;
     Ok(Json(result))
+}
+
+// ---------------------------------------------------------------------------
+// Sign (stamp signature images onto pages)
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize, Default)]
+struct SignManifest {
+    #[serde(default)]
+    placements: Vec<sign::Placement>,
+    output_name: Option<String>,
+}
+
+/// POST /api/sign — multipart with the PDF (`file` or `path`), optional `password`, one or
+/// more `signature` images, and a `manifest` JSON field with the placements. Responds with
+/// the signed PDF.
+async fn sign_handler(
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Result<Response, ApiError> {
+    let mut input: Option<MergeInput> = None;
+    let mut password: Option<String> = None;
+    let mut signatures: Vec<Vec<u8>> = Vec::new();
+    let mut manifest = SignManifest::default();
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::bad_request(e.to_string()))?
+    {
+        let name = field.name().unwrap_or("").to_string();
+        match name.as_str() {
+            "file" => {
+                let file_name = field.file_name().unwrap_or("document.pdf").to_string();
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                input = Some(MergeInput::new(file_name, data.to_vec()));
+            }
+            "path" => {
+                let raw = field
+                    .text()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                let path = resolve_local_path(&state, raw.trim())?;
+                input = Some(read_input(&path).map_err(|e| ApiError::bad_request(e.to_string()))?);
+            }
+            "password" => {
+                password = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| ApiError::bad_request(e.to_string()))?,
+                )
+                .filter(|p| !p.is_empty())
+            }
+            "signature" => {
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                signatures.push(data.to_vec());
+            }
+            "manifest" => {
+                let raw = field
+                    .text()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                manifest = serde_json::from_str(&raw)
+                    .map_err(|e| ApiError::bad_request(format!("Invalid manifest: {e}")))?;
+            }
+            _ => {
+                let _ = field.bytes().await;
+            }
+        }
+    }
+    let mut input = input.ok_or_else(|| ApiError::bad_request("No PDF was provided."))?;
+    input.password = password;
+    if signatures.is_empty() {
+        return Err(ApiError::bad_request("No signature image was provided."));
+    }
+    let output_name = sanitize_filename(
+        manifest
+            .output_name
+            .as_deref()
+            .unwrap_or(&format!("{}-signed", input.name.trim_end_matches(".pdf"))),
+    );
+    let _permit = state
+        .merges
+        .acquire()
+        .await
+        .map_err(|_| ApiError::bad_request("Server is shutting down."))?;
+    let placements = manifest.placements;
+    let count = placements.len();
+    let pdf = tokio::task::spawn_blocking(move || sign::sign(&input, &signatures, &placements))
+        .await
+        .map_err(|e| ApiError::bad_request(format!("Sign task failed: {e}")))?
+        .map_err(|e| ApiError::from_merge(&e))?;
+    state.log(
+        "sign",
+        &[
+            ("placements", count.to_string()),
+            ("out", human_size(pdf.len())),
+        ],
+    );
+    Ok(pdf_response(pdf, &output_name))
 }
 
 // ---------------------------------------------------------------------------

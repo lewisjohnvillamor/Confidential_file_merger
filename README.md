@@ -34,6 +34,10 @@ to anyone, nothing phones home, nothing is logged about your documents.
   uncompressed streams are compressed.
 - **Correct physical size.** Image pages use the DPI declared by the file, so a 300 DPI
   scan becomes a letter-sized page instead of a poster.
+- **Sign documents.** A separate Sign tab: draw a signature with mouse, trackpad, finger or
+  pen, upload a photo or scan (the white paper becomes transparent), or type your name.
+  Drag it onto the page, resize and rotate it, stamp it on every page, and download. The
+  signature is embedded as a transparent PNG; nothing else on the page changes.
 - **Document properties.** Title, author, subject and keywords, set from the GUI or CLI.
 - **Unlimited.** No file count, size, or "merges per day" limits. Merge, tweak the list,
   merge again. Feed the result back into the list and keep going.
@@ -104,6 +108,30 @@ Confidential File Merger v0.1.0
 Keyboard: focus a row and use **Alt+↑/↓** to move it, **R** to rotate, **P** for the page
 picker, **Delete** to remove, **↑/↓** to move between rows. Screen readers get the same
 announcements.
+
+### Signing
+
+Open the **Sign** tab.
+
+1. **Document.** Choose or drop the PDF (or press *Use last merged result*). Every page is
+   rendered so you can see where you are signing.
+2. **Signature.** *Draw* on the pad (pen colour and width are adjustable, with undo),
+   *Upload* a photo or scan (turn *Remove white background* on and tune the threshold
+   until only the ink remains), or *Type* your name in a script face. Press **Save** to keep
+   a signature in this browser for next time; saved signatures never leave the device.
+3. **Place.** Pick the page from the strip, press **Place on page**, then drag the
+   signature where it belongs. The corner handle resizes it (aspect ratio is kept), the top
+   handle rotates it (hold Shift for 15° steps), and the toolbar offers exact size, angle,
+   *Copy to all pages* and *Remove*. Arrow keys nudge a selected signature; `+`/`-` resize;
+   `R` rotates.
+4. **Sign & download**, or **Sign & add to merge list** to continue in the Merge tab.
+
+![The Sign tab with a drawn signature placed on a page](docs/screenshot-sign.png)
+
+Signatures are stamped as transparent images with a soft mask, so they sit cleanly over
+text and lines. The placement follows the page exactly as displayed, including pages that
+carry a rotation. This is a visual signature, not a cryptographic one: it proves nothing by
+itself, exactly like signing on paper.
 
 ## Server options
 
@@ -188,6 +216,14 @@ confidential_file_merger merge -o out.pdf --title "Q1 pack" --author "Ana" \
   --no-source-outlines --ignore-image-dpi a.pdf b.pdf
 ```
 
+```sh
+# Stamp a signature image on the last page, 25% of the page width, centred at 70%/85%.
+confidential_file_merger sign -o signed.pdf contract.pdf --signature sig.png
+# Every page, top-left, a little smaller, tilted, on a password-protected file.
+confidential_file_merger sign -o signed.pdf 'form.pdf?password=x' --signature initials.png \
+  --pages all --at 0.15,0.1 --width 0.12 --angle -5
+```
+
 Per-file options after `?`: `pages=` (ranges, `odd`, `even`, `last`; either direction),
 `rotate=` (whole file), `rotateN=` (page N), `password=`. `--password` applies to every
 encrypted input. `--no-bookmarks`, `--no-source-outlines`, `--no-forms`, `--no-optimize`,
@@ -203,7 +239,8 @@ Everything the GUI does goes through a small JSON/multipart API you can script:
 | --- | --- |
 | `POST /api/merge` | Multipart `file`/`path` fields in order plus `page_size`, `margin`, `output_name`, `password`, or a `manifest` JSON field. Responds with the PDF. |
 | `POST /api/jobs` | Same form, returns `{id}` at once. `GET /api/jobs/{id}` reports `queued`/`running` (step, total, label)/`done`/`error`; `GET /api/jobs/{id}/result` returns the PDF once and forgets the job. Jobs expire after 15 minutes. |
-| `POST /api/inspect` | One `file`/`path`, optional `password`, `thumbs=none\|first\|all`, `max_edge`, `max_pages`. Returns page count, encryption state, page sizes and PNG thumbnails. |
+| `POST /api/inspect` | One `file`/`path`, optional `password`, `thumbs=none\|first\|all`, `page=N` for one page, `max_edge`, `max_pages`. Returns page count, encryption state, page sizes and PNG thumbnails. |
+| `POST /api/sign` | The PDF as `file`/`path`, optional `password`, one or more `signature` images, and a `manifest` with `placements` (`page`, `image`, `cx`, `cy`, `width`, `height` as fractions of the displayed page, `angle` in degrees) and `output_name`. Responds with the signed PDF. |
 | `POST /api/folder/scan` | `{"path": "...", "recursive": false}` (opt-in). |
 | `POST /api/login`, `POST /api/logout` | Token cookie handling. `GET /api/config` describes the server. |
 

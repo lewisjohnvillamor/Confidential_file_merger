@@ -150,6 +150,67 @@
   footer select { padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); font: inherit; font-size: 13px; }
   .coffee { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
 
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; margin-bottom: -1px; color: var(--ink-2); font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+  .tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabs button svg { width: 16px; height: 16px; }
+
+  /* Sign tab */
+  .sg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .sg-head h2 { margin: 0; font-size: 15px; }
+  .sg-head .meta { color: var(--ink-3); font-size: 13px; font-weight: 400; margin-left: 8px; }
+  .sg-body { padding: 16px 18px; }
+  .sg-doc { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .sg-doc .thumb { width: 56px; height: 56px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; }
+  .sg-doc .thumb img { max-width: 100%; max-height: 100%; }
+  .sg-doc .name { font-weight: 600; }
+  .sg-doc .sub { color: var(--ink-3); font-size: 13px; }
+  .subtabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+  .subtabs button { border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink-2); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .subtabs button[aria-selected=true] { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .sg-src { display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .sg-src { grid-template-columns: 1fr; } }
+  .pad-wrap { position: relative; }
+  .pad { width: 100%; height: 220px; border: 2px dashed var(--line-2); border-radius: 12px; background: #fff; touch-action: none; cursor: crosshair; display: block; }
+  .pad-hint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: #9a958b; font-size: 13px; pointer-events: none; }
+  .pad-line { position: absolute; left: 24px; right: 24px; bottom: 44px; border-top: 1px solid #d9d4c7; pointer-events: none; }
+  .tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+  .tools label { display: inline-flex; gap: 6px; align-items: center; }
+  .tools input[type=range] { width: 110px; }
+  .tools input[type=text] { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; min-width: 200px; }
+  .tools select { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; }
+  .swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); cursor: pointer; padding: 0; }
+  .swatch[aria-pressed=true] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .sig-preview { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: repeating-conic-gradient(#e8e4da 0 25%, #f7f4ed 0 50%) 0 0 / 16px 16px; min-height: 120px; display: grid; place-items: center; }
+  @media (prefers-color-scheme: dark) { .sig-preview { background: repeating-conic-gradient(#33363b 0 25%, #26292d 0 50%) 0 0 / 16px 16px; } }
+  .sig-preview img { max-width: 100%; max-height: 140px; }
+  .sig-preview .none { color: var(--ink-3); font-size: 13px; }
+  .saved { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .saved .card { border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--panel-2); cursor: pointer; display: grid; gap: 6px; }
+  .saved .card img { width: 100%; height: 60px; object-fit: contain; }
+  .saved .card .row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink-3); }
+  .stage-wrap { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .stage-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); }
+  .stage-bar .grow { flex: 1; }
+  .stage-scroll { overflow: auto; max-height: 78vh; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); padding: 14px; }
+  .stage { position: relative; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,.25); background: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .stage > img.page { display: block; width: 100%; height: auto; pointer-events: none; }
+  .stamp { position: absolute; transform-origin: center; cursor: move; touch-action: none; outline: 2px solid transparent; outline-offset: 2px; }
+  .stamp img { width: 100%; height: 100%; display: block; pointer-events: none; }
+  .stamp.sel { outline-color: var(--accent); }
+  .stamp .h { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); display: none; touch-action: none; }
+  .stamp.sel .h { display: block; }
+  .stamp .h.rs { right: -10px; bottom: -10px; cursor: nwse-resize; }
+  .stamp .h.rt { left: calc(50% - 9px); top: -34px; cursor: grab; }
+  .stamp .h.rt::after { content: ""; position: absolute; left: 6px; top: 16px; width: 2px; height: 16px; background: var(--accent); }
+  .stamp .h.del { left: -10px; top: -10px; background: var(--danger); cursor: pointer; display: none; }
+  .stamp.sel .h.del { display: grid; place-items: center; color: #fff; font-size: 12px; line-height: 1; font-weight: 700; }
+  .strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; }
+  .strip img { height: 72px; border: 2px solid var(--line); border-radius: 6px; cursor: pointer; background: #fff; }
+  .strip img.cur { border-color: var(--accent); }
+  .strip img.has { box-shadow: 0 0 0 2px var(--warn); }
+
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; pointer-events: none; transition: .2s; max-width: 90vw; z-index: 50; }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -194,6 +255,12 @@
     <div class="badge" data-i18n-title="badge_title" title="The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server."><span class="dot"></span> <span data-i18n="badge">Offline · nothing leaves this machine</span></div>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Tools">
+    <button role="tab" id="tabBtnMerge" aria-selected="true" aria-controls="tabMerge" data-tab="merge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7l3 3h6v9H4z"/></svg><span data-i18n="tab_merge">Merge</span></button>
+    <button role="tab" id="tabBtnSign" aria-selected="false" aria-controls="tabSign" data-tab="sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16c3-1 4-6 6-6s1 4 3 4 2-3 4-3 2 3 4 3"/></svg><span data-i18n="tab_sign">Sign</span></button>
+  </nav>
+
+  <div id="tabMerge" role="tabpanel" aria-labelledby="tabBtnMerge">
   <section class="drop" id="drop">
     <h2 data-i18n="drop_title">Drop PDFs, images, or whole folders here</h2>
     <p data-i18n="drop_formats">PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — any amount, any order.</p>
@@ -301,6 +368,111 @@
       <p class="folder-note" data-i18n="folder_note">Files are read directly by the server process in natural order (1, 2, 10) and appended to the list above. Useful when the browser runs on the same machine, or the files are too big to upload comfortably.</p>
     </div>
   </details>
+
+  </div>
+
+  <div id="tabSign" role="tabpanel" aria-labelledby="tabBtnSign" hidden>
+    <section class="panel">
+      <div class="sg-head"><h2><span data-i18n="sg_step1">1. Document</span> <span class="meta" id="sgDocMeta"></span></h2>
+        <div class="queue-tools"><button class="btn small" id="sgPick"><span data-i18n="sg_pick">Choose PDF</span></button><button class="btn ghost small" id="sgUseResult" hidden data-i18n="sg_use_result">Use last merged result</button></div>
+      </div>
+      <div class="sg-body">
+        <div class="sg-doc" id="sgDoc"><span class="sub" data-i18n="sg_no_doc">Drop a PDF here or choose one. It stays on this machine.</span></div>
+        <input type="file" id="sgFile" class="sr" accept=".pdf,application/pdf">
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:20px">
+      <div class="sg-head"><h2 data-i18n="sg_step2">2. Signature</h2>
+        <div class="subtabs" role="tablist">
+          <button role="tab" aria-selected="true" data-src="draw" data-i18n="sg_draw">Draw</button>
+          <button role="tab" aria-selected="false" data-src="upload" data-i18n="sg_upload">Upload image</button>
+          <button role="tab" aria-selected="false" data-src="type" data-i18n="sg_type">Type</button>
+          <button role="tab" aria-selected="false" data-src="saved" data-i18n="sg_saved">Saved</button>
+        </div>
+      </div>
+      <div class="sg-body sg-src">
+        <div>
+          <div id="srcDraw">
+            <div class="pad-wrap"><canvas class="pad" id="pad" aria-label="Signature pad"></canvas><div class="pad-line"></div><div class="pad-hint" data-i18n="sg_pad_hint">Sign here with your mouse, trackpad, finger or pen</div></div>
+            <div class="tools">
+              <button class="swatch" data-color="#111111" aria-pressed="true" title="Black" style="background:#111"></button>
+              <button class="swatch" data-color="#1a3d8f" aria-pressed="false" title="Blue" style="background:#1a3d8f"></button>
+              <label><span data-i18n="sg_pen">Pen</span> <input type="range" id="penWidth" min="1" max="6" step="0.5" value="2.5"></label>
+              <span style="flex:1"></span>
+              <button class="btn ghost small" id="padUndo" data-i18n="sg_undo">Undo</button>
+              <button class="btn ghost small" id="padClear" data-i18n="sg_clear">Clear</button>
+            </div>
+          </div>
+          <div id="srcUpload" hidden>
+            <button class="btn" id="sigPick"><span data-i18n="sg_pick_image">Choose image</span></button>
+            <input type="file" id="sigFile" class="sr" accept="image/*">
+            <div class="tools">
+              <label><input type="checkbox" id="removeBg" checked> <span data-i18n="sg_remove_bg">Remove white background</span></label>
+              <label><span data-i18n="sg_threshold">Threshold</span> <input type="range" id="bgThreshold" min="120" max="250" value="200"></label>
+            </div>
+            <p class="folder-note" data-i18n="sg_upload_hint">A photo or scan of your signature on white paper works well: the paper becomes transparent, the ink stays.</p>
+          </div>
+          <div id="srcType" hidden>
+            <div class="tools">
+              <input type="text" id="typeText" data-i18n-placeholder="sg_type_placeholder" placeholder="Your name" spellcheck="false">
+              <select id="typeFont">
+                <option value='"Brush Script MT", "Segoe Script", "Snell Roundhand", "Apple Chancery", "Comic Sans MS", cursive' style="font-family:'Brush Script MT','Segoe Script','Snell Roundhand',cursive">Script</option>
+                <option value='"Palatino Linotype", "Book Antiqua", Georgia, serif' style="font-family:Georgia,serif">Serif italic</option>
+                <option value='"Segoe UI", Roboto, Helvetica, Arial, sans-serif' style="font-family:Arial,sans-serif">Sans</option>
+              </select>
+              <button class="swatch" data-tcolor="#111111" aria-pressed="true" title="Black" style="background:#111"></button>
+              <button class="swatch" data-tcolor="#1a3d8f" aria-pressed="false" title="Blue" style="background:#1a3d8f"></button>
+            </div>
+          </div>
+          <div id="srcSaved" hidden>
+            <div class="saved" id="savedList"></div>
+            <p class="folder-note" id="savedEmpty" data-i18n="sg_saved_empty">No saved signatures yet. Draw, upload or type one, then press Save.</p>
+            <p class="folder-note" data-i18n="sg_saved_note">Saved signatures live only in this browser's storage on this device.</p>
+          </div>
+        </div>
+        <div>
+          <div class="sig-preview" id="sigPreview"><span class="none" data-i18n="sg_preview_empty">Your signature appears here</span></div>
+          <div class="tools" style="justify-content:flex-end">
+            <button class="btn ghost small" id="sigSave" disabled data-i18n="sg_save">Save</button>
+            <button class="btn primary small" id="sigPlace" disabled data-i18n="sg_place">Place on page</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:20px" id="sgStagePanel" hidden>
+      <div class="sg-head"><h2 data-i18n="sg_step3">3. Place</h2>
+        <div class="stage-bar">
+          <button class="btn ghost small" id="pgPrev">‹ <span data-i18n="sg_prev">Prev</span></button>
+          <span id="pgLabel"></span>
+          <button class="btn ghost small" id="pgNext"><span data-i18n="sg_next">Next</span> ›</button>
+        </div>
+      </div>
+      <div class="sg-body stage-wrap">
+        <div class="strip" id="strip"></div>
+        <div class="stage-bar" id="stampBar" hidden>
+          <label><span data-i18n="sg_size">Size</span> <input type="range" id="stampSize" min="4" max="80" value="25"></label>
+          <label><span data-i18n="sg_angle">Angle</span> <input type="number" id="stampAngle" min="-180" max="180" step="1" value="0" style="width:70px"></label>
+          <button class="btn ghost small" id="stampAll" data-i18n="sg_all_pages">Copy to all pages</button>
+          <button class="btn ghost small" id="stampDel" data-i18n="sg_delete">Remove</button>
+          <span class="grow"></span>
+          <span id="stampHint" data-i18n="sg_hint">Drag to move · corner to resize · top handle to rotate</span>
+        </div>
+        <div class="stage-scroll"><div class="stage" id="stage"><img class="page" id="stagePage" alt=""></div></div>
+      </div>
+    </section>
+
+    <div class="go">
+      <button class="btn primary" id="sgGo" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16c3-1 4-6 6-6s1 4 3 4 2-3 4-3 2 3 4 3"/></svg>
+        <span data-i18n="sg_go">Sign &amp; download</span>
+      </button>
+      <button class="btn" id="sgToMerge" disabled data-i18n="sg_to_merge">Sign &amp; add to merge list</button>
+      <span class="status" id="sgStatus" aria-live="polite"></span>
+    </div>
+    <div class="error" id="sgError" hidden role="alert"></div>
+  </div>
 
   <section class="panel why" aria-label="Why this exists">
     <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4v5c0 5-3.8 8.4-9 9-5.2-.6-9-4-9-9V7z"/><path d="M12 9v4M12 16.5v.5"/></svg></div>
@@ -429,6 +601,23 @@
       no_files_in_folder: 'No supported files found in that folder.', from_folder: (n) => `Added ${n} file${n === 1 ? '' : 's'} from folder`,
       selected_of: (n, t) => `${n} of ${t} pages selected`, thumbs_failed: 'Previews are not available for this file; you can still pick pages by number.',
       rot_badge: (d) => `↻ ${d}°`, rot_pages: (list) => `↻ p. ${list}`, first_n_previews: (n) => `Previews shown for the first ${n} pages; use the range box for the rest.`,
+      // sign tab
+      tab_merge: 'Merge', tab_sign: 'Sign',
+      sg_step1: '1. Document', sg_pick: 'Choose PDF', sg_use_result: 'Use last merged result',
+      sg_no_doc: 'Drop a PDF here or choose one. It stays on this machine.',
+      sg_step2: '2. Signature', sg_draw: 'Draw', sg_upload: 'Upload image', sg_type: 'Type', sg_saved: 'Saved',
+      sg_pad_hint: 'Sign here with your mouse, trackpad, finger or pen', sg_pen: 'Pen', sg_undo: 'Undo', sg_clear: 'Clear',
+      sg_pick_image: 'Choose image', sg_remove_bg: 'Remove white background', sg_threshold: 'Threshold',
+      sg_upload_hint: 'A photo or scan of your signature on white paper works well: the paper becomes transparent, the ink stays.',
+      sg_type_placeholder: 'Your name', sg_saved_empty: 'No saved signatures yet. Draw, upload or type one, then press Save.',
+      sg_saved_note: "Saved signatures live only in this browser's storage on this device.", sg_preview_empty: 'Your signature appears here',
+      sg_save: 'Save', sg_place: 'Place on page', sg_step3: '3. Place', sg_prev: 'Prev', sg_next: 'Next',
+      sg_size: 'Size', sg_angle: 'Angle', sg_all_pages: 'Copy to all pages', sg_delete: 'Remove',
+      sg_hint: 'Drag to move · corner to resize · top handle to rotate', sg_go: 'Sign & download', sg_to_merge: 'Sign & add to merge list',
+      sg_page_of: (n, m) => `Page ${n} of ${m}`, sg_pages_n: (n) => `${n} page${n === 1 ? '' : 's'}`, sg_placed_n: (n) => `${n} signature${n === 1 ? '' : 's'} placed`,
+      sg_need_doc: 'Choose a PDF first.', sg_need_sig: 'Create a signature first.', sg_need_place: 'Place the signature on a page first.',
+      sg_signing: 'Signing…', sg_done: (name) => `Signed → ${name}`, sg_added: 'Signed PDF added to the merge list', sg_saved_ok: 'Signature saved in this browser',
+      sg_use: 'Use', sg_forget: 'Forget', sg_rendering: 'Rendering page…',
     },
     es: {
       tagline: 'Une PDF e imágenes en un solo PDF. Funciona en tu equipo y no habla con nadie.',
@@ -478,6 +667,22 @@
       no_files_in_folder: 'No se encontraron archivos compatibles en esa carpeta.', from_folder: (n) => `${n} archivo${n === 1 ? '' : 's'} añadido${n === 1 ? '' : 's'} desde la carpeta`,
       selected_of: (n, t) => `${n} de ${t} páginas seleccionadas`, thumbs_failed: 'No hay vistas previas para este archivo; puedes elegir páginas por número.',
       rot_badge: (d) => `↻ ${d}°`, rot_pages: (list) => `↻ pág. ${list}`, first_n_previews: (n) => `Se muestran vistas previas de las primeras ${n} páginas; usa el cuadro de rango para el resto.`,
+      tab_merge: 'Unir', tab_sign: 'Firmar',
+      sg_step1: '1. Documento', sg_pick: 'Elegir PDF', sg_use_result: 'Usar el último resultado',
+      sg_no_doc: 'Suelta un PDF aquí o elige uno. Se queda en este equipo.',
+      sg_step2: '2. Firma', sg_draw: 'Dibujar', sg_upload: 'Subir imagen', sg_type: 'Escribir', sg_saved: 'Guardadas',
+      sg_pad_hint: 'Firma aquí con el ratón, el trackpad, el dedo o un lápiz', sg_pen: 'Trazo', sg_undo: 'Deshacer', sg_clear: 'Borrar',
+      sg_pick_image: 'Elegir imagen', sg_remove_bg: 'Quitar fondo blanco', sg_threshold: 'Umbral',
+      sg_upload_hint: 'Una foto o escaneo de tu firma sobre papel blanco funciona bien: el papel se vuelve transparente y la tinta se conserva.',
+      sg_type_placeholder: 'Tu nombre', sg_saved_empty: 'Aún no hay firmas guardadas. Dibuja, sube o escribe una y pulsa Guardar.',
+      sg_saved_note: 'Las firmas guardadas viven solo en el almacenamiento de este navegador, en este dispositivo.', sg_preview_empty: 'Tu firma aparecerá aquí',
+      sg_save: 'Guardar', sg_place: 'Colocar en la página', sg_step3: '3. Colocar', sg_prev: 'Anterior', sg_next: 'Siguiente',
+      sg_size: 'Tamaño', sg_angle: 'Ángulo', sg_all_pages: 'Copiar a todas las páginas', sg_delete: 'Quitar',
+      sg_hint: 'Arrastra para mover · esquina para redimensionar · asa superior para girar', sg_go: 'Firmar y descargar', sg_to_merge: 'Firmar y añadir a la lista',
+      sg_page_of: (n, m) => `Página ${n} de ${m}`, sg_pages_n: (n) => `${n} página${n === 1 ? '' : 's'}`, sg_placed_n: (n) => `${n} firma${n === 1 ? '' : 's'} colocada${n === 1 ? '' : 's'}`,
+      sg_need_doc: 'Elige primero un PDF.', sg_need_sig: 'Crea primero una firma.', sg_need_place: 'Coloca primero la firma en una página.',
+      sg_signing: 'Firmando…', sg_done: (name) => `Firmado → ${name}`, sg_added: 'PDF firmado añadido a la lista', sg_saved_ok: 'Firma guardada en este navegador',
+      sg_use: 'Usar', sg_forget: 'Olvidar', sg_rendering: 'Generando página…',
     },
   };
   let lang = 'en';
@@ -1025,6 +1230,306 @@
     } catch (err) { if (err.code !== 'unauthorized') showError(err.message); } finally { els.folderScan.disabled = false; }
   });
   els.folderPath.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.folderScan.click(); });
+
+
+  // ==================== SIGN TAB ====================
+  const sg = {};
+  ['tabMerge','tabSign','tabBtnMerge','tabBtnSign','sgDocMeta','sgPick','sgUseResult','sgDoc','sgFile','pad','penWidth','padUndo','padClear','srcDraw','srcUpload','srcType','srcSaved',
+   'sigPick','sigFile','removeBg','bgThreshold','typeText','typeFont','savedList','savedEmpty','sigPreview','sigSave','sigPlace','sgStagePanel','pgPrev','pgLabel','pgNext','strip',
+   'stampBar','stampSize','stampAngle','stampAll','stampDel','stage','stagePage','sgGo','sgToMerge','sgStatus','sgError'].forEach((id) => { sg[id] = $(id); });
+
+  // Tabs
+  function showTab(name) {
+    const isSign = name === 'sign';
+    sg.tabMerge.hidden = isSign; sg.tabSign.hidden = !isSign;
+    sg.tabBtnMerge.setAttribute('aria-selected', String(!isSign)); sg.tabBtnSign.setAttribute('aria-selected', String(isSign));
+    try { localStorage.setItem('cfm_tab', name); } catch (_) {}
+    if (isSign) { sg.sgUseResult.hidden = !lastResultBlob; if (padNeedsInit) initPad(); }
+  }
+  document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+  // ----- document -----
+  const sdoc = { file: null, name: '', pages: 0, password: '', thumbs: [], renders: new Map(), sizes: [] };
+  const stamps = []; // { id, page, sig, cx, cy, w, h, angle }
+  const sigs = [];   // { id, dataUrl, w, h }
+  let stampSeq = 1, sigSeq = 1, curPage = 1, selected = null, currentSig = null;
+
+  sg.sgPick.addEventListener('click', () => sg.sgFile.click());
+  sg.sgFile.addEventListener('change', () => { if (sg.sgFile.files[0]) loadSignDoc(sg.sgFile.files[0]); sg.sgFile.value = ''; });
+  sg.sgUseResult.addEventListener('click', () => { if (lastResultBlob) loadSignDoc(new File([lastResultBlob], lastResultName, { type: 'application/pdf' })); });
+  sg.sgDoc.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  sg.sgDoc.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadSignDoc(f); });
+  async function loadSignDoc(file, password) {
+    if (ext(file.name) !== 'pdf' && file.type !== 'application/pdf') { toast(t('skipped_n', 1, file.name)); return; }
+    sdoc.file = file; sdoc.name = file.name; sdoc.password = password || ''; sdoc.renders = new Map(); sdoc.thumbs = []; stamps.length = 0; selected = null; curPage = 1;
+    renderSignDoc('…');
+    const form = new FormData(); form.append('file', file, file.name); form.append('thumbs', 'all'); form.append('max_edge', '120'); form.append('max_pages', '500'); if (sdoc.password) form.append('password', sdoc.password);
+    try {
+      const res = await api('/api/inspect', { method: 'POST', body: form }); const body = await res.json();
+      if (!res.ok) {
+        if (body.code === 'encrypted' || body.code === 'wrong_password') { sdoc.pages = 0; renderSignDoc(null, body.code === 'wrong_password'); return; }
+        throw new Error(body.error);
+      }
+      sdoc.pages = body.pages; sdoc.thumbs = body.thumbs || []; sdoc.sizes = body.page_sizes || [];
+      renderSignDoc(); renderStrip(); sg.sgStagePanel.hidden = false; await showPage(1); updateSignButtons();
+    } catch (err) { if (err.code !== 'unauthorized') showSgError(err.message); }
+  }
+  function renderSignDoc(loading, wrong) {
+    if (!sdoc.file) { sg.sgDoc.innerHTML = `<span class="sub">${esc(t('sg_no_doc'))}</span>`; sg.sgDocMeta.textContent = ''; return; }
+    const thumb = sdoc.thumbs[0] ? `<img alt="" src="${sdoc.thumbs[0]}">` : ICON_PDF;
+    const pw = loading === null ? `<div class="unlock"><span>🔒 ${esc(t('needs_pw'))}</span><input type="password" id="sgPw" placeholder="${esc(t('pw_placeholder'))}"><button class="btn small" id="sgUnlock">${esc(t('unlock'))}</button>${wrong ? `<span class="err">${esc(t('wrong_pw'))}</span>` : ''}</div>` : '';
+    sg.sgDoc.innerHTML = `<div class="thumb">${thumb}</div><div><div class="name"></div><div class="sub">${loading === '…' ? esc(t('sg_rendering')) : (sdoc.pages ? esc(t('sg_pages_n', sdoc.pages)) : '')} · ${fmtSize(sdoc.file.size)}</div></div>${pw}`;
+    sg.sgDoc.querySelector('.name').textContent = sdoc.name;
+    sg.sgDocMeta.textContent = sdoc.pages ? t('sg_pages_n', sdoc.pages) : '';
+    const unlock = $('sgUnlock'); if (unlock) { const go = () => loadSignDoc(sdoc.file, $('sgPw').value); unlock.addEventListener('click', go); $('sgPw').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); }); }
+  }
+  function renderStrip() {
+    sg.strip.innerHTML = '';
+    sdoc.thumbs.forEach((src, i) => { const img = document.createElement('img'); img.src = src; img.alt = `Page ${i + 1}`; img.dataset.page = i + 1; img.addEventListener('click', () => showPage(i + 1)); sg.strip.appendChild(img); });
+    updateStrip();
+  }
+  function updateStrip() {
+    sg.strip.querySelectorAll('img').forEach((img) => { const n = Number(img.dataset.page); img.classList.toggle('cur', n === curPage); img.classList.toggle('has', stamps.some((s) => s.page === n)); });
+    sg.pgLabel.textContent = t('sg_page_of', curPage, sdoc.pages); sg.pgPrev.disabled = curPage <= 1; sg.pgNext.disabled = curPage >= sdoc.pages;
+  }
+  async function pageRender(n) {
+    if (sdoc.renders.has(n)) return sdoc.renders.get(n);
+    const form = new FormData(); form.append('file', sdoc.file, sdoc.name); form.append('page', String(n)); form.append('max_edge', '1400'); if (sdoc.password) form.append('password', sdoc.password);
+    const res = await api('/api/inspect', { method: 'POST', body: form }); const body = await res.json();
+    if (!res.ok) throw new Error(body.error);
+    const url = (body.thumbs && body.thumbs[0]) || ''; sdoc.renders.set(n, url); return url;
+  }
+  async function showPage(n) {
+    curPage = Math.min(Math.max(1, n), sdoc.pages); selected = null; updateStrip();
+    sg.stagePage.src = sdoc.thumbs[curPage - 1] || ''; // instant low-res, then sharp
+    sg.stage.querySelectorAll('.stamp').forEach((el) => el.remove());
+    try { const url = await pageRender(curPage); if (url && curPage === n) sg.stagePage.src = url; } catch (err) { if (err.code !== 'unauthorized') showSgError(err.message); }
+    renderStamps();
+  }
+  sg.pgPrev.addEventListener('click', () => showPage(curPage - 1));
+  sg.pgNext.addEventListener('click', () => showPage(curPage + 1));
+
+  // ----- signature sources -----
+  document.querySelectorAll('.subtabs [data-src]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.subtabs [data-src]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    for (const k of ['Draw', 'Upload', 'Type', 'Saved']) sg['src' + k].hidden = b.dataset.src !== k.toLowerCase();
+    if (b.dataset.src === 'draw' && padNeedsInit) initPad();
+    if (b.dataset.src === 'type') renderTyped();
+    if (b.dataset.src === 'saved') renderSaved();
+  }));
+
+  // Draw pad: pointer events, pressure-agnostic smoothing, undo per stroke.
+  let padNeedsInit = true, padCtx, strokes = [], stroke = null, penColor = '#111111';
+  function initPad() {
+    if (sg.tabSign.hidden || sg.srcDraw.hidden) return;
+    const rect = sg.pad.getBoundingClientRect(); if (!rect.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    sg.pad.width = Math.round(rect.width * dpr); sg.pad.height = Math.round(rect.height * dpr);
+    padCtx = sg.pad.getContext('2d'); padCtx.scale(dpr, dpr); padCtx.lineCap = 'round'; padCtx.lineJoin = 'round';
+    padNeedsInit = false; redrawPad();
+  }
+  window.addEventListener('resize', () => { padNeedsInit = true; initPad(); });
+  function redrawPad() {
+    if (!padCtx) return; const rect = sg.pad.getBoundingClientRect();
+    padCtx.clearRect(0, 0, rect.width, rect.height);
+    for (const s of strokes) drawStroke(s);
+  }
+  function drawStroke(s) {
+    if (s.pts.length < 2) { const p = s.pts[0]; padCtx.fillStyle = s.color; padCtx.beginPath(); padCtx.arc(p.x, p.y, s.width / 2, 0, Math.PI * 2); padCtx.fill(); return; }
+    padCtx.strokeStyle = s.color; padCtx.lineWidth = s.width; padCtx.beginPath(); padCtx.moveTo(s.pts[0].x, s.pts[0].y);
+    for (let i = 1; i < s.pts.length - 1; i++) { const m = { x: (s.pts[i].x + s.pts[i + 1].x) / 2, y: (s.pts[i].y + s.pts[i + 1].y) / 2 }; padCtx.quadraticCurveTo(s.pts[i].x, s.pts[i].y, m.x, m.y); }
+    const l = s.pts[s.pts.length - 1]; padCtx.lineTo(l.x, l.y); padCtx.stroke();
+  }
+  const padPoint = (e) => { const r = sg.pad.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  sg.pad.addEventListener('pointerdown', (e) => { if (padNeedsInit) initPad(); e.preventDefault(); sg.pad.setPointerCapture(e.pointerId); stroke = { color: penColor, width: Number(sg.penWidth.value) * (e.pointerType === 'pen' && e.pressure ? 0.6 + e.pressure : 1), pts: [padPoint(e)] }; strokes.push(stroke); redrawPad(); });
+  sg.pad.addEventListener('pointermove', (e) => { if (!stroke) return; e.preventDefault(); const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const ev of evs) stroke.pts.push(padPoint(ev)); redrawPad(); });
+  const endStroke = () => { if (!stroke) return; stroke = null; padToSignature(); };
+  sg.pad.addEventListener('pointerup', endStroke); sg.pad.addEventListener('pointercancel', endStroke); sg.pad.addEventListener('pointerleave', endStroke);
+  sg.padUndo.addEventListener('click', () => { strokes.pop(); redrawPad(); padToSignature(); });
+  sg.padClear.addEventListener('click', () => { strokes = []; redrawPad(); setSignature(null); });
+  document.querySelectorAll('.swatch[data-color]').forEach((b) => b.addEventListener('click', () => { penColor = b.dataset.color; document.querySelectorAll('.swatch[data-color]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+  function padToSignature() {
+    if (!strokes.length) { setSignature(null); return; }
+    // Render strokes at 3x into an offscreen canvas and trim to the ink.
+    const rect = sg.pad.getBoundingClientRect(); const k = 3;
+    const off = document.createElement('canvas'); off.width = Math.round(rect.width * k); off.height = Math.round(rect.height * k);
+    const ctx = off.getContext('2d'); ctx.scale(k, k); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const saved = padCtx; padCtx = ctx; for (const s of strokes) drawStroke(s); padCtx = saved;
+    setSignature(trimCanvas(off, 8));
+  }
+  function trimCanvas(c, pad) {
+    const ctx = c.getContext('2d'); const { width: w, height: h } = c; const d = ctx.getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (d[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+    if (x1 < 0) return null;
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+    const out = document.createElement('canvas'); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+    out.getContext('2d').drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    return out;
+  }
+  // Upload: composite onto canvas, optionally turn light background transparent.
+  let uploadImg = null;
+  sg.sigPick.addEventListener('click', () => sg.sigFile.click());
+  sg.sigFile.addEventListener('change', () => { const f = sg.sigFile.files[0]; sg.sigFile.value = ''; if (!f) return; const img = new Image(); img.onload = () => { uploadImg = img; uploadToSignature(); }; img.onerror = () => toast(t('skipped_n', 1, f.name)); img.src = URL.createObjectURL(f); });
+  sg.removeBg.addEventListener('change', uploadToSignature); sg.bgThreshold.addEventListener('input', uploadToSignature);
+  function uploadToSignature() {
+    if (!uploadImg) return;
+    const max = 1600; const k = Math.min(1, max / Math.max(uploadImg.width, uploadImg.height));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(uploadImg.width * k)); c.height = Math.max(1, Math.round(uploadImg.height * k));
+    const ctx = c.getContext('2d'); ctx.drawImage(uploadImg, 0, 0, c.width, c.height);
+    if (sg.removeBg.checked) {
+      const id = ctx.getImageData(0, 0, c.width, c.height); const d = id.data; const thr = Number(sg.bgThreshold.value); const soft = 40;
+      for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        let a = lum >= thr ? 0 : lum <= thr - soft ? 1 : (thr - lum) / soft;
+        d[i + 3] = Math.round(d[i + 3] * a);
+      }
+      ctx.putImageData(id, 0, 0);
+      setSignature(trimCanvas(c, 6) || c);
+    } else setSignature(c);
+  }
+  // Type: render text in a script-like font.
+  let typeColor = '#111111';
+  document.querySelectorAll('.swatch[data-tcolor]').forEach((b) => b.addEventListener('click', () => { typeColor = b.dataset.tcolor; document.querySelectorAll('.swatch[data-tcolor]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderTyped(); }));
+  sg.typeText.addEventListener('input', renderTyped); sg.typeFont.addEventListener('change', renderTyped);
+  function renderTyped() {
+    const text = sg.typeText.value.trim(); if (!text) { setSignature(null); return; }
+    const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const font = `italic 600 96px ${sg.typeFont.value}`;
+    ctx.font = font; const w = Math.ceil(ctx.measureText(text).width) + 40; c.width = Math.max(40, w); c.height = 150;
+    const ctx2 = c.getContext('2d'); ctx2.font = font; ctx2.fillStyle = typeColor; ctx2.textBaseline = 'middle'; ctx2.fillText(text, 20, 78);
+    setSignature(trimCanvas(c, 8) || c);
+  }
+  // Current signature (a canvas) -> PNG data URL preview.
+  function setSignature(canvas) {
+    currentSig = canvas ? { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height } : null;
+    sg.sigPreview.innerHTML = currentSig ? `<img alt="" src="${currentSig.dataUrl}">` : `<span class="none">${esc(t('sg_preview_empty'))}</span>`;
+    sg.sigSave.disabled = !currentSig; sg.sigPlace.disabled = !currentSig || !sdoc.pages;
+  }
+  // Saved signatures (localStorage, PNG data URLs).
+  const loadSaved = () => { try { return JSON.parse(localStorage.getItem('cfm_signatures') || '[]'); } catch (_) { return []; } };
+  const storeSaved = (list) => { try { localStorage.setItem('cfm_signatures', JSON.stringify(list.slice(0, 8))); } catch (_) { toast('Storage full'); } };
+  sg.sigSave.addEventListener('click', () => { if (!currentSig) return; const list = loadSaved(); list.unshift({ dataUrl: currentSig.dataUrl, w: currentSig.w, h: currentSig.h, at: Date.now() }); storeSaved(list); toast(t('sg_saved_ok')); renderSaved(); });
+  function renderSaved() {
+    const list = loadSaved(); sg.savedList.innerHTML = ''; sg.savedEmpty.hidden = list.length > 0;
+    list.forEach((s, i) => {
+      const card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = `<img alt="" src="${s.dataUrl}"><div class="row"><span>${new Date(s.at).toLocaleDateString()}</span><span><button class="btn ghost small" data-use="${i}">${esc(t('sg_use'))}</button><button class="btn ghost small" data-forget="${i}">${esc(t('sg_forget'))}</button></span></div>`;
+      sg.savedList.appendChild(card);
+    });
+  }
+  sg.savedList.addEventListener('click', (e) => {
+    const use = e.target.closest('[data-use]'); const forget = e.target.closest('[data-forget]'); const list = loadSaved();
+    if (use) { const s = list[Number(use.dataset.use)]; if (s) { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0); setSignature(c); }; img.src = s.dataUrl; } }
+    if (forget) { list.splice(Number(forget.dataset.forget), 1); storeSaved(list); renderSaved(); }
+  });
+
+  // ----- placing stamps -----
+  function registerSig() {
+    // Reuse an identical signature already in the list.
+    let s = sigs.find((x) => x.dataUrl === currentSig.dataUrl);
+    if (!s) { s = { id: sigSeq++, dataUrl: currentSig.dataUrl, w: currentSig.w, h: currentSig.h }; sigs.push(s); }
+    return s;
+  }
+  sg.sigPlace.addEventListener('click', () => {
+    if (!sdoc.pages) { showSgError(t('sg_need_doc')); return; } if (!currentSig) { showSgError(t('sg_need_sig')); return; }
+    clearSgError(); const s = registerSig();
+    const pageW = sg.stage.clientWidth || 800, pageH = sg.stage.clientHeight || 1000;
+    const w = 0.28; const hPx = (w * pageW) * (s.h / s.w); const h = hPx / pageH;
+    const st = { id: stampSeq++, page: curPage, sig: s.id, cx: 0.68, cy: Math.min(0.9, 1 - h / 2 - 0.05), w, h, angle: 0 };
+    stamps.push(st); selected = st.id; renderStamps(); updateStrip(); updateSignButtons();
+    const el = sg.stage.querySelector('.stamp.sel'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  });
+  function renderStamps() {
+    sg.stage.querySelectorAll('.stamp').forEach((el) => el.remove());
+    const W = sg.stage.clientWidth, H = sg.stage.clientHeight;
+    for (const st of stamps.filter((x) => x.page === curPage)) {
+      const s = sigs.find((x) => x.id === st.sig); if (!s) continue;
+      const el = document.createElement('div'); el.className = 'stamp' + (st.id === selected ? ' sel' : ''); el.dataset.id = st.id; el.tabIndex = 0; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'signature');
+      el.style.left = `${(st.cx - st.w / 2) * W}px`; el.style.top = `${(st.cy - st.h / 2) * H}px`; el.style.width = `${st.w * W}px`; el.style.height = `${st.h * H}px`; el.style.transform = `rotate(${st.angle}deg)`;
+      el.innerHTML = `<img alt="" src="${s.dataUrl}"><div class="h rt" data-h="rt" title="${esc(t('sg_angle'))}"></div><div class="h rs" data-h="rs" title="${esc(t('sg_size'))}"></div><div class="h del" data-h="del" title="${esc(t('sg_delete'))}">×</div>`;
+      sg.stage.appendChild(el);
+    }
+    const sel = stamps.find((x) => x.id === selected);
+    sg.stampBar.hidden = !sel;
+    if (sel) { sg.stampSize.value = Math.round(sel.w * 100); sg.stampAngle.value = Math.round(sel.angle); }
+  }
+  let drag = null;
+  sg.stage.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.stamp'); if (!el) { selected = null; renderStamps(); return; }
+    e.preventDefault(); const st = stamps.find((x) => x.id === Number(el.dataset.id)); if (!st) return;
+    selected = st.id; renderStamps();
+    const handle = e.target.dataset.h;
+    if (handle === 'del') { stamps.splice(stamps.indexOf(st), 1); selected = null; renderStamps(); updateStrip(); updateSignButtons(); return; }
+    const r = sg.stage.getBoundingClientRect(); const W = r.width, H = r.height;
+    const px = (e.clientX - r.left) / W, py = (e.clientY - r.top) / H;
+    drag = { st, mode: handle || 'move', sx: px, sy: py, cx: st.cx, cy: st.cy, w: st.w, h: st.h, angle: st.angle, W, H, startAngle: Math.atan2(py * H - st.cy * H, px * W - st.cx * W) };
+    sg.stage.setPointerCapture(e.pointerId);
+  });
+  sg.stage.addEventListener('pointermove', (e) => {
+    if (!drag) return; e.preventDefault();
+    const r = sg.stage.getBoundingClientRect(); const px = (e.clientX - r.left) / drag.W, py = (e.clientY - r.top) / drag.H; const st = drag.st;
+    if (drag.mode === 'move') { st.cx = Math.min(1, Math.max(0, drag.cx + px - drag.sx)); st.cy = Math.min(1, Math.max(0, drag.cy + py - drag.sy)); }
+    else if (drag.mode === 'rs') {
+      // Distance from centre along the (rotated) diagonal decides the new size; aspect is kept.
+      const dx = (px - st.cx) * drag.W, dy = (py - st.cy) * drag.H; const a = (st.angle * Math.PI) / 180;
+      const lx = dx * Math.cos(-a) - dy * Math.sin(-a); const newHalfW = Math.max(12, lx);
+      st.w = (newHalfW * 2) / drag.W; st.h = st.w * (drag.h / drag.w);
+    } else if (drag.mode === 'rt') {
+      const ang = Math.atan2(py * drag.H - st.cy * drag.H, px * drag.W - st.cx * drag.W); let deg = drag.angle + ((ang - drag.startAngle) * 180) / Math.PI;
+      if (e.shiftKey) deg = Math.round(deg / 15) * 15; st.angle = ((Math.round(deg) + 180) % 360 + 360) % 360 - 180;
+    }
+    renderStamps();
+  });
+  const endDrag = () => { drag = null; };
+  sg.stage.addEventListener('pointerup', endDrag); sg.stage.addEventListener('pointercancel', endDrag);
+  sg.stage.addEventListener('keydown', (e) => {
+    const st = stamps.find((x) => x.id === selected); if (!st) return; const step = e.shiftKey ? 0.02 : 0.005;
+    if (e.key === 'ArrowLeft') st.cx -= step; else if (e.key === 'ArrowRight') st.cx += step; else if (e.key === 'ArrowUp') st.cy -= step; else if (e.key === 'ArrowDown') st.cy += step;
+    else if (e.key === 'Delete' || e.key === 'Backspace') { stamps.splice(stamps.indexOf(st), 1); selected = null; }
+    else if (e.key === '+' || e.key === '=') { st.w *= 1.05; st.h *= 1.05; } else if (e.key === '-') { st.w /= 1.05; st.h /= 1.05; }
+    else if (e.key === 'r') st.angle = (st.angle + (e.shiftKey ? -15 : 15)) % 360; else return;
+    e.preventDefault(); renderStamps(); updateStrip(); updateSignButtons();
+  });
+  sg.stampSize.addEventListener('input', () => { const st = stamps.find((x) => x.id === selected); if (!st) return; const ratio = st.h / st.w; st.w = Number(sg.stampSize.value) / 100; st.h = st.w * ratio; renderStamps(); });
+  sg.stampAngle.addEventListener('input', () => { const st = stamps.find((x) => x.id === selected); if (!st) return; st.angle = Number(sg.stampAngle.value) || 0; renderStamps(); });
+  sg.stampDel.addEventListener('click', () => { const i = stamps.findIndex((x) => x.id === selected); if (i >= 0) stamps.splice(i, 1); selected = null; renderStamps(); updateStrip(); updateSignButtons(); });
+  sg.stampAll.addEventListener('click', () => {
+    const st = stamps.find((x) => x.id === selected); if (!st) return;
+    for (let n = 1; n <= sdoc.pages; n++) { if (n === st.page) continue; if (stamps.some((x) => x.page === n && x.sig === st.sig && Math.abs(x.cx - st.cx) < 1e-6 && Math.abs(x.cy - st.cy) < 1e-6)) continue; stamps.push({ ...st, id: stampSeq++, page: n }); }
+    updateStrip(); updateSignButtons(); toast(t('sg_placed_n', stamps.length));
+  });
+  function updateSignButtons() { const ok = sdoc.pages > 0 && stamps.length > 0; sg.sgGo.disabled = !ok; sg.sgToMerge.disabled = !ok; sg.sigPlace.disabled = !currentSig || !sdoc.pages; sg.sgStatus.textContent = stamps.length ? t('sg_placed_n', stamps.length) : ''; }
+  const showSgError = (m) => { sg.sgError.textContent = m; sg.sgError.hidden = false; }; const clearSgError = () => { sg.sgError.hidden = true; };
+
+  // ----- signing -----
+  // CSP forbids fetch() of data: URLs, so decode the PNG ourselves.
+  function dataUrlToBlob(dataUrl) {
+    const [head, b64] = dataUrl.split(','); const mime = /data:([^;]+)/.exec(head)[1]; const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  }
+  async function doSign(toMerge) {
+    if (!sdoc.pages) return showSgError(t('sg_need_doc')); if (!stamps.length) return showSgError(t('sg_need_place'));
+    clearSgError(); sg.sgGo.disabled = true; sg.sgToMerge.disabled = true; sg.sgStatus.textContent = t('sg_signing');
+    try {
+      const used = [...new Set(stamps.map((s) => s.sig))]; const form = new FormData();
+      form.append('file', sdoc.file, sdoc.name); if (sdoc.password) form.append('password', sdoc.password);
+      for (const id of used) { const s = sigs.find((x) => x.id === id); form.append('signature', dataUrlToBlob(s.dataUrl), `signature-${id}.png`); }
+      const placements = stamps.map((s) => ({ page: s.page, image: used.indexOf(s.sig), cx: s.cx, cy: s.cy, width: s.w, height: s.h, angle: s.angle }));
+      const outName = sdoc.name.replace(/\.pdf$/i, '') + '-signed.pdf';
+      form.append('manifest', JSON.stringify({ placements, output_name: outName }));
+      const res = await api('/api/sign', { method: 'POST', body: form });
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || `HTTP ${res.status}`); }
+      const blob = await res.blob();
+      if (toMerge) { addFiles([new File([blob], outName, { type: 'application/pdf', lastModified: Date.now() })], { sort: false }); toast(t('sg_added')); }
+      else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = outName; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
+      sg.sgStatus.textContent = t('sg_done', outName);
+    } catch (err) { if (err.code !== 'unauthorized') showSgError(err.message); sg.sgStatus.textContent = ''; }
+    finally { updateSignButtons(); }
+  }
+  sg.sgGo.addEventListener('click', () => doSign(false));
+  sg.sgToMerge.addEventListener('click', () => doSign(true));
+  try { if (localStorage.getItem('cfm_tab') === 'sign') showTab('sign'); } catch (_) {}
 
   // ---------- startup ----------
   els.lang.addEventListener('change', () => { lang = els.lang.value; try { localStorage.setItem('cfm_lang', lang); } catch (_) {} applyLang(); });

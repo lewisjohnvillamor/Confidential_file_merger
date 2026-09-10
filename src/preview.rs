@@ -14,6 +14,8 @@ pub enum Thumbs {
     First,
     /// Render every page up to this many.
     All(usize),
+    /// Render just this page (0-based).
+    Page(usize),
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -71,22 +73,23 @@ fn inspect_pdf(
         data.to_vec()
     };
 
+    let (first, wanted) = match thumbs {
+        Thumbs::None => (0, 0),
+        Thumbs::First => (0, 1),
+        Thumbs::All(n) => (0, n),
+        Thumbs::Page(i) => (i, 1),
+    };
     let mut page_sizes = Vec::new();
-    for (_, id) in pages.iter().take(match thumbs {
-        Thumbs::None | Thumbs::First => 1,
-        Thumbs::All(n) => n,
-    }) {
+    for (_, id) in pages.iter().skip(first).take(wanted.max(1)) {
         page_sizes.push(merge::page_size_pt(&doc, *id));
     }
 
-    let wanted = match thumbs {
-        Thumbs::None => 0,
-        Thumbs::First => 1,
-        Thumbs::All(n) => n,
-    };
     let mut out = Vec::new();
     if wanted > 0 {
-        out = render_pdf_thumbs(render_bytes, wanted, max_edge_px);
+        out = render_pdf_page_images(render_bytes, first, wanted, max_edge_px)
+            .into_iter()
+            .filter_map(|img| png_data_url(&DynamicImage::ImageRgb8(img)))
+            .collect();
     }
     Ok(Inspection {
         kind: "pdf",
@@ -97,9 +100,15 @@ fn inspect_pdf(
     })
 }
 
-/// Render up to `wanted` pages to PNG data URLs. Rendering problems yield fewer thumbnails,
-/// never an error: a preview is a convenience, the merge itself does not depend on it.
-fn render_pdf_thumbs(bytes: Vec<u8>, wanted: usize, max_edge_px: u32) -> Vec<String> {
+/// Render `count` pages starting at `first` (0-based) to RGB images no larger than
+/// `max_edge_px` on their longest side. Rendering problems yield fewer images, never an
+/// error: a preview is a convenience, the merge itself does not depend on it.
+pub fn render_pdf_page_images(
+    bytes: Vec<u8>,
+    first: usize,
+    count: usize,
+    max_edge_px: u32,
+) -> Vec<image::RgbImage> {
     use hayro::hayro_interpret::InterpreterSettings;
     use hayro::hayro_syntax::Pdf;
     use hayro::vello_cpu::color::palette::css::WHITE;
@@ -111,7 +120,7 @@ fn render_pdf_thumbs(bytes: Vec<u8>, wanted: usize, max_edge_px: u32) -> Vec<Str
     let settings = InterpreterSettings::default();
     let cache = RenderCache::new();
     let mut out = Vec::new();
-    for page in pdf.pages().iter().take(wanted) {
+    for page in pdf.pages().iter().skip(first).take(count) {
         let (w, h) = page.render_dimensions();
         let scale = (max_edge_px as f32 / w.max(h).max(1.0)).min(4.0);
         let pixmap = render(
@@ -134,11 +143,8 @@ fn render_pdf_thumbs(bytes: Vec<u8>, wanted: usize, max_edge_px: u32) -> Vec<Str
             rgb.push(((px.g as u32 * a + 255 * (255 - a)) / 255) as u8);
             rgb.push(((px.b as u32 * a + 255 * (255 - a)) / 255) as u8);
         }
-        let Some(img) = image::RgbImage::from_raw(pw, ph, rgb) else {
-            break;
-        };
-        match png_data_url(&DynamicImage::ImageRgb8(img)) {
-            Some(url) => out.push(url),
+        match image::RgbImage::from_raw(pw, ph, rgb) {
+            Some(img) => out.push(img),
             None => break,
         }
     }
@@ -156,14 +162,15 @@ fn inspect_image(
         message: e.0,
     })?;
     let count = pages.len() as u32;
-    let wanted = match thumbs {
-        Thumbs::None => 0,
-        Thumbs::First => 1,
-        Thumbs::All(n) => n,
+    let (first, wanted) = match thumbs {
+        Thumbs::None => (0, 0),
+        Thumbs::First => (0, 1),
+        Thumbs::All(n) => (0, n),
+        Thumbs::Page(i) => (i, 1),
     };
     let mut page_sizes = Vec::new();
     let mut out = Vec::new();
-    for page in pages.iter().take(wanted.max(1)) {
+    for page in pages.iter().skip(first).take(wanted.max(1)) {
         let dpi = page
             .dpi
             .filter(|(x, y)| (30.0..=2400.0).contains(x) && (30.0..=2400.0).contains(y));
