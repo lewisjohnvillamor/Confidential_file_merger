@@ -682,10 +682,15 @@ impl Store {
     // ----- trust store -----
 
     fn trusted_path(&self, fingerprint: &str) -> PathBuf {
-        self.dir.join("trusted").join(format!(
-            "{}.pem",
-            fingerprint.replace(':', "").to_ascii_lowercase()
-        ))
+        // Only hex survives, so a fingerprint that arrived from an HTTP path cannot
+        // escape the folder.
+        let name: String = fingerprint
+            .chars()
+            .filter(|c| c.is_ascii_hexdigit())
+            .take(64)
+            .collect::<String>()
+            .to_ascii_lowercase();
+        self.dir.join("trusted").join(format!("{name}.pem"))
     }
 
     pub fn trusted(&self) -> Vec<TrustedInfo> {
@@ -762,6 +767,8 @@ impl Store {
     }
 }
 
+/// Identity ids are hex, so stripping everything else keeps a file name inside the folder
+/// even when the id came straight from an HTTP path.
 fn safe_id(id: &str) -> String {
     id.chars()
         .filter(|c| c.is_ascii_alphanumeric())
@@ -993,6 +1000,25 @@ mod tests {
         assert!(is_trusted(&their_cert, &store.trust_anchors()));
         store.remove_trusted(&them.cert.fingerprint).unwrap();
         assert!(store.trusted().is_empty());
+    }
+
+    #[test]
+    fn store_file_names_cannot_escape_the_data_folder() {
+        let store = temp_store();
+        let outside = store.dir().parent().unwrap().join("victim.pem");
+        std::fs::write(&outside, "keep me").unwrap();
+        // A fingerprint or id that arrived from an HTTP path must stay inside the folder.
+        assert!(store.remove_trusted("../victim").is_err());
+        assert!(store.remove_trusted("%2e%2e%2fvictim").is_err());
+        assert!(store.delete("../../etc/passwd").is_err());
+        assert!(outside.exists(), "a path outside the store was touched");
+        assert!(store
+            .trusted_path("../victim")
+            .starts_with(store.dir().join("trusted")));
+        assert!(store
+            .identity_path("../victim")
+            .starts_with(store.dir().join("identities")));
+        std::fs::remove_file(outside).ok();
     }
 
     #[test]
