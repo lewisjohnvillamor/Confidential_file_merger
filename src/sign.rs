@@ -90,7 +90,7 @@ fn add_signature_xobject(doc: &mut Document, sig: &SignatureImage) -> ObjectId {
 }
 
 /// The page's displayed box (CropBox if present, else MediaBox) and its rotation.
-struct PageGeometry {
+pub(crate) struct PageGeometry {
     x0: f64,
     y0: f64,
     x1: f64,
@@ -119,7 +119,7 @@ impl PageGeometry {
     }
 }
 
-fn page_geometry(doc: &Document, page_id: ObjectId) -> PageGeometry {
+pub(crate) fn page_geometry(doc: &Document, page_id: ObjectId) -> PageGeometry {
     let inherited = merge::collect_inherited(doc, page_id);
     let page = doc.get_dictionary(page_id).ok();
     let lookup = |key: &[u8]| -> Option<Object> {
@@ -179,6 +179,30 @@ fn page_geometry(doc: &Document, page_id: ObjectId) -> PageGeometry {
         y1: b[3],
         rotate,
     }
+}
+
+/// Axis-aligned user-space rectangle `[x0 y0 x1 y1]` of a placement (rotation ignored).
+pub(crate) fn placement_rect(geometry: &PageGeometry, placement: &Placement) -> [f64; 4] {
+    let (vw, vh) = geometry.visual_size();
+    let (cx, cy) = (placement.cx * vw, placement.cy * vh);
+    let (hw, hh) = (
+        placement.width.abs() * vw / 2.0,
+        placement.height.abs() * vh / 2.0,
+    );
+    let corners = [
+        geometry.visual_to_user(cx - hw, cy - hh),
+        geometry.visual_to_user(cx + hw, cy - hh),
+        geometry.visual_to_user(cx - hw, cy + hh),
+        geometry.visual_to_user(cx + hw, cy + hh),
+    ];
+    let xs = corners.iter().map(|c| c.0);
+    let ys = corners.iter().map(|c| c.1);
+    [
+        xs.clone().fold(f64::INFINITY, f64::min),
+        ys.clone().fold(f64::INFINITY, f64::min),
+        xs.fold(f64::NEG_INFINITY, f64::max),
+        ys.fold(f64::NEG_INFINITY, f64::max),
+    ]
 }
 
 /// Build the `cm` matrix that maps the unit square onto the stamp's rectangle.

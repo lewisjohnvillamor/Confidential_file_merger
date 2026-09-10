@@ -240,6 +240,46 @@
   .login input { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font: inherit; }
   .login p { margin: 0; color: var(--ink-2); font-size: 14px; }
   .login .err { color: var(--danger); font-size: 13px; }
+  /* certificates & verification */
+  .cert-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; padding: 14px 18px; border-top: 1px solid var(--line); background: var(--panel-2); }
+  .cert-fields .field input[type=password] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
+  .cert-note { padding: 10px 18px 14px; font-size: 13px; color: var(--ink-3); background: var(--panel-2); border-radius: 0 0 var(--radius) var(--radius); }
+  .cert-note a { color: var(--accent); }
+  .id-list { display: grid; gap: 10px; }
+  .id-card { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); flex-wrap: wrap; }
+  .id-card .info { flex: 1 1 240px; min-width: 0; }
+  .id-card .info b { display: block; font-size: 15px; }
+  .id-card .info .sub { color: var(--ink-3); font-size: 13px; word-break: break-all; }
+  .id-card .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); }
+  .tag.warn { background: var(--warn-soft); color: var(--warn); }
+  .tag.bad { background: var(--danger-soft); color: var(--danger); }
+  .tag.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+  .mgr h4 { margin: 18px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .mgr h4:first-child { margin-top: 0; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 14px; }
+  .form-grid .field input, .form-grid .field textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
+  .form-grid .field textarea, .ask textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; min-height: 90px; resize: vertical; }
+  .form-grid .wide { grid-column: 1 / -1; }
+  .form-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .form-actions .err { color: var(--danger); font-size: 13px; }
+  details.mgr-more summary { cursor: pointer; font-size: 13px; color: var(--ink-2); padding: 6px 0; }
+  .vf-drop { padding: 28px 20px; text-align: center; border: 2px dashed var(--line-2); border-radius: var(--radius); background: var(--panel); }
+  .vf-drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .vf-drop p { margin: 8px 0 0; color: var(--ink-3); font-size: 13px; }
+  .vf-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 18px; font-size: 15px; font-weight: 600; }
+  .vf-sig { border-top: 1px solid var(--line); padding: 14px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 18px; }
+  .vf-sig .head { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-weight: 700; }
+  .vf-sig dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; font-size: 13px; }
+  .vf-sig dt { color: var(--ink-3); }
+  .vf-sig dd { margin: 0; word-break: break-word; }
+  .vf-sig ul.problems { grid-column: 1 / -1; margin: 4px 0 0; padding-left: 18px; color: var(--danger); font-size: 13px; }
+  .vf-sig .acts { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .ask { padding: 18px; display: grid; gap: 10px; }
+  .ask p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .ask input, .ask textarea { padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font: inherit; width: 100%; }
+  .ask .err { color: var(--danger); font-size: 13px; }
+  .ask .row { display: flex; gap: 8px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -258,6 +298,7 @@
   <nav class="tabs" role="tablist" aria-label="Tools">
     <button role="tab" id="tabBtnMerge" aria-selected="true" aria-controls="tabMerge" data-tab="merge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7l3 3h6v9H4z"/></svg><span data-i18n="tab_merge">Merge</span></button>
     <button role="tab" id="tabBtnSign" aria-selected="false" aria-controls="tabSign" data-tab="sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16c3-1 4-6 6-6s1 4 3 4 2-3 4-3 2 3 4 3"/></svg><span data-i18n="tab_sign">Sign</span></button>
+    <button role="tab" id="tabBtnVerify" aria-selected="false" aria-controls="tabVerify" data-tab="verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4v5c0 5-3.8 8.4-9 9-5.2-.6-9-4-9-9V7z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="tab_verify">Verify</span></button>
   </nav>
 
   <div id="tabMerge" role="tabpanel" aria-labelledby="tabBtnMerge">
@@ -463,6 +504,20 @@
       </div>
     </section>
 
+    <section class="panel" style="margin-top:20px" id="certPanel">
+      <div class="sg-head"><h2 data-i18n="sg_step4">4. Digital certificate</h2>
+        <div class="queue-tools"><label class="checks" style="padding:0;border:0;background:none"><input type="checkbox" id="certOn"> <span data-i18n="cert_on">Also sign with a certificate</span></label>
+          <button class="btn ghost small" id="certManage" data-i18n="cert_manage">Manage identities…</button></div>
+      </div>
+      <div class="cert-fields" id="certFields" hidden>
+        <div class="field"><label for="certIdentity" data-i18n="cert_identity">Identity</label><select id="certIdentity"></select><div class="help" id="certIdentityHelp"></div></div>
+        <div class="field"><label for="certPass" data-i18n="cert_pass">Passphrase</label><input type="password" id="certPass" autocomplete="off"></div>
+        <div class="field"><label for="certReason" data-i18n="cert_reason">Reason (optional)</label><input type="text" id="certReason" data-i18n-placeholder="cert_reason_ph" placeholder="I approve this document"></div>
+        <div class="field"><label for="certLocation" data-i18n="cert_location">Location (optional)</label><input type="text" id="certLocation"></div>
+      </div>
+      <div class="cert-note" id="certNote"><span data-i18n="cert_note">A certificate signature seals the whole file: any later change is detected, and readers can check who signed it. It is computed on this machine with your own key; no certificate authority or internet is involved. The first placed stamp becomes the visible signature box; with no stamp the signature is invisible.</span></div>
+    </section>
+
     <div class="go">
       <button class="btn primary" id="sgGo" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16c3-1 4-6 6-6s1 4 3 4 2-3 4-3 2 3 4 3"/></svg>
@@ -472,6 +527,23 @@
       <span class="status" id="sgStatus" aria-live="polite"></span>
     </div>
     <div class="error" id="sgError" hidden role="alert"></div>
+  </div>
+
+  <div id="tabVerify" role="tabpanel" aria-labelledby="tabBtnVerify" hidden>
+    <section class="panel">
+      <div class="sg-head"><h2 data-i18n="vf_title">Check a signed PDF</h2>
+        <div class="queue-tools"><button class="btn small" id="vfPick"><span data-i18n="vf_pick">Choose PDF</span></button><input type="file" id="vfFile" class="sr" accept=".pdf,application/pdf"></div>
+      </div>
+      <div class="sg-body">
+        <div class="vf-drop" id="vfDrop"><strong data-i18n="vf_drop">Drop a signed PDF here</strong><p data-i18n="vf_drop_sub">Every signature is checked on this machine against your trusted signers. Nothing is sent anywhere.</p></div>
+        <div class="unlock" id="vfUnlock" hidden><input type="password" id="vfPass" data-i18n-placeholder="vf_pass" placeholder="Password of the PDF"><button class="btn small" id="vfPassGo" data-i18n="vf_pass_go">Check again</button></div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:20px" id="vfResult" hidden>
+      <div class="vf-summary" id="vfSummary"></div>
+      <div id="vfList"></div>
+    </section>
+    <div class="error" id="vfError" hidden role="alert"></div>
   </div>
 
   <section class="panel why" aria-label="Why this exists">
@@ -525,6 +597,69 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Identity manager -->
+<div class="overlay" id="idOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="idTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="idTitle" data-i18n="id_title">Signing identities &amp; trusted signers</h3>
+      <button class="icon-btn" id="idClose" title="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="modal-body mgr">
+      <h4 data-i18n="id_yours">Your identities</h4>
+      <p class="empty" id="idEmpty" data-i18n="id_empty">No identities yet. Create one below: it is a private key plus a self-signed certificate, stored encrypted on this machine.</p>
+      <div class="id-list" id="idList"></div>
+
+      <h4 data-i18n="id_create">Create a new identity</h4>
+      <form id="idCreate" class="form-grid" autocomplete="off">
+        <div class="field"><label for="idcName" data-i18n="id_name">Name</label><input type="text" id="idcName" required></div>
+        <div class="field"><label for="idcEmail" data-i18n="id_email">Email (optional)</label><input type="email" id="idcEmail"></div>
+        <div class="field"><label for="idcOrg" data-i18n="id_org">Organization (optional)</label><input type="text" id="idcOrg"></div>
+        <div class="field"><label for="idcCountry" data-i18n="id_country">Country code (optional)</label><input type="text" id="idcCountry" maxlength="2" placeholder="PH"></div>
+        <div class="field"><label for="idcPass" data-i18n="id_pass">Passphrase</label><input type="password" id="idcPass" required minlength="4"></div>
+        <div class="field"><label for="idcPass2" data-i18n="id_pass2">Repeat passphrase</label><input type="password" id="idcPass2" required minlength="4"></div>
+        <div class="field"><label for="idcDays" data-i18n="id_days">Valid for (days)</label><input type="number" id="idcDays" value="1095" min="1" max="36500"></div>
+        <div class="form-actions wide"><button class="btn primary" type="submit" data-i18n="id_create_btn">Create identity</button><span class="err" id="idcErr"></span></div>
+      </form>
+
+      <details class="mgr-more"><summary data-i18n="id_import">Import a certificate and key from another tool (PEM)…</summary>
+        <form id="idImport" class="form-grid" autocomplete="off" style="margin-top:8px">
+          <div class="field wide"><label for="idiCert" data-i18n="id_cert_pem">Certificate (PEM)</label><textarea id="idiCert" required spellcheck="false" placeholder="-----BEGIN CERTIFICATE-----"></textarea></div>
+          <div class="field wide"><label for="idiKey" data-i18n="id_key_pem">Private key (PEM)</label><textarea id="idiKey" required spellcheck="false" placeholder="-----BEGIN PRIVATE KEY-----"></textarea></div>
+          <div class="field"><label for="idiKeyPass" data-i18n="id_key_pass">Key passphrase (if encrypted)</label><input type="password" id="idiKeyPass"></div>
+          <div class="field"><label for="idiPass" data-i18n="id_store_pass">Passphrase for the stored copy</label><input type="password" id="idiPass" required minlength="4"></div>
+          <div class="form-actions wide"><button class="btn" type="submit" data-i18n="id_import_btn">Import</button><span class="err" id="idiErr"></span></div>
+        </form>
+      </details>
+
+      <h4 data-i18n="tr_title">Trusted signers</h4>
+      <p class="sub" style="margin:0 0 10px;color:var(--ink-3);font-size:13px" data-i18n="tr_note">Your own identities are always trusted. Add other people's certificates here so their signatures show as trusted when you verify.</p>
+      <div class="id-list" id="trList"></div>
+      <form id="trAdd" class="form-grid" autocomplete="off" style="margin-top:10px">
+        <div class="field wide"><label for="trPem" data-i18n="tr_pem">Certificate to trust (PEM)</label><textarea id="trPem" required spellcheck="false" placeholder="-----BEGIN CERTIFICATE-----"></textarea></div>
+        <div class="form-actions wide"><button class="btn" type="submit" data-i18n="tr_add_btn">Trust this certificate</button><input type="file" id="trFile" class="sr" accept=".crt,.pem,.cer"><button class="btn ghost" type="button" id="trFileBtn" data-i18n="tr_file">…or pick a file</button><span class="err" id="trErr"></span></div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <span id="idDir" class="sub"></span>
+      <div class="right"><button class="btn" id="idDone" data-i18n="done">Done</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Small prompt (passphrase / PEM / confirm) -->
+<div class="overlay" id="askOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <form class="modal small" id="askForm">
+    <div class="modal-head"><h3 id="askTitle"></h3></div>
+    <div class="ask">
+      <p id="askText"></p>
+      <textarea id="askArea" hidden spellcheck="false"></textarea>
+      <input type="password" id="askPass" hidden autocomplete="off">
+      <div class="err" id="askErr" hidden></div>
+      <div class="row"><button class="btn" type="button" id="askCancel" data-i18n="cancel">Cancel</button><button class="btn primary" type="submit" id="askOk">OK</button></div>
+    </div>
+  </form>
 </div>
 
 <!-- Login -->
@@ -618,6 +753,29 @@
       sg_need_doc: 'Choose a PDF first.', sg_need_sig: 'Create a signature first.', sg_need_place: 'Place the signature on a page first.',
       sg_signing: 'Signing…', sg_done: (name) => `Signed → ${name}`, sg_added: 'Signed PDF added to the merge list', sg_saved_ok: 'Signature saved in this browser',
       sg_use: 'Use', sg_forget: 'Forget', sg_rendering: 'Rendering page…',
+      // certificates & verify
+      tab_verify: 'Verify', sg_step4: '4. Digital certificate', cert_on: 'Also sign with a certificate', cert_manage: 'Manage identities…',
+      cert_identity: 'Identity', cert_pass: 'Passphrase', cert_reason: 'Reason (optional)', cert_reason_ph: 'I approve this document', cert_location: 'Location (optional)',
+      cert_note: 'A certificate signature seals the whole file: any later change is detected, and readers can check who signed it. It is computed on this machine with your own key; no certificate authority or internet is involved. The first placed stamp becomes the visible signature box; with no stamp the signature is invisible.',
+      cert_no_identity: 'No identities yet. Use “Manage identities…” to create one.', cert_need_identity: 'Choose an identity, or create one first.', cert_need_pass: 'Enter the passphrase of the identity.',
+      id_title: 'Signing identities & trusted signers', id_yours: 'Your identities', id_empty: 'No identities yet. Create one below: it is a private key plus a self-signed certificate, stored encrypted on this machine.',
+      id_create: 'Create a new identity', id_name: 'Name', id_email: 'Email (optional)', id_org: 'Organization (optional)', id_country: 'Country code (optional)', id_pass: 'Passphrase', id_pass2: 'Repeat passphrase', id_days: 'Valid for (days)', id_create_btn: 'Create identity',
+      id_import: 'Import a certificate and key from another tool (PEM)…', id_cert_pem: 'Certificate (PEM)', id_key_pem: 'Private key (PEM)', id_key_pass: 'Key passphrase (if encrypted)', id_store_pass: 'Passphrase for the stored copy', id_import_btn: 'Import',
+      id_self_signed: 'self-signed', id_ca_issued: 'CA-issued', id_expired: 'expired', id_valid_until: (d) => `Valid until ${d}`, id_fingerprint: 'SHA-256 fingerprint',
+      id_download_cert: 'Download certificate', id_csr: 'Request from a CA…', id_install: 'Install CA certificate…', id_delete: 'Delete',
+      id_csr_text: 'Enter the passphrase to produce a certificate signing request (CSR) for this key. Send the .csr file to a certificate authority; install the certificate they return with “Install CA certificate…”.', id_csr_btn: 'Download CSR',
+      id_install_text: 'Paste the certificate (PEM) the certificate authority issued for this identity, and enter the passphrase.', id_install_btn: 'Install', id_installed: 'Certificate installed',
+      id_delete_text: (n) => `Delete the identity “${n}”? Its private key is erased for good; documents already signed with it stay valid.`,
+      id_pass_mismatch: 'The passphrases do not match.', id_created: (n) => `Identity “${n}” created`, id_imported: (n) => `Identity “${n}” imported`, id_cert_downloaded: 'Certificate downloaded. Give it to people who should trust your signature.',
+      id_dir: (d) => `Stored in ${d}`, done: 'Done', yes: 'yes', no: 'no',
+      tr_title: 'Trusted signers', tr_note: "Your own identities are always trusted. Add other people's certificates here so their signatures show as trusted when you verify.",
+      tr_pem: 'Certificate to trust (PEM)', tr_add_btn: 'Trust this certificate', tr_file: '…or pick a file', tr_remove: 'Remove', tr_empty: 'No trusted signers added yet.', tr_added: (d) => `added ${d}`, tr_added_ok: (n) => `Now trusting ${n}`,
+      vf_title: 'Check a signed PDF', vf_pick: 'Choose PDF', vf_drop: 'Drop a signed PDF here', vf_drop_sub: 'Every signature is checked on this machine against your trusted signers. Nothing is sent anywhere.',
+      vf_pass: 'Password of the PDF', vf_pass_go: 'Check again', vf_checking: (n) => `Checking ${n}…`,
+      vf_none: 'No digital signatures', vf_all_valid: (n) => `${n} valid signature${n === 1 ? '' : 's'}`, vf_invalid: 'Invalid signature', vf_modified_after: 'changed after the last signature',
+      vf_sig_valid_trusted: 'Valid · trusted signer', vf_sig_valid_untrusted: 'Valid · signer not trusted yet', vf_sig_invalid: 'INVALID', vf_unknown_signer: 'unknown signer',
+      vf_signed_on: 'Signed on', vf_email: 'Email', vf_org: 'Organization', vf_reason: 'Reason', vf_location: 'Location', vf_contact: 'Contact', vf_issuer: 'Issued by', vf_cert_valid: 'Certificate validity',
+      vf_integrity: 'Content unchanged', vf_signature: 'Signature checks out', vf_trusted: 'Signer trusted', vf_cert_now: 'Certificate valid today', vf_whole_file: 'Covers whole file', vf_algo: 'Algorithms', vf_trust_signer: 'Trust this signer',
     },
     es: {
       tagline: 'Une PDF e imágenes en un solo PDF. Funciona en tu equipo y no habla con nadie.',
@@ -683,6 +841,29 @@
       sg_need_doc: 'Elige primero un PDF.', sg_need_sig: 'Crea primero una firma.', sg_need_place: 'Coloca primero la firma en una página.',
       sg_signing: 'Firmando…', sg_done: (name) => `Firmado → ${name}`, sg_added: 'PDF firmado añadido a la lista', sg_saved_ok: 'Firma guardada en este navegador',
       sg_use: 'Usar', sg_forget: 'Olvidar', sg_rendering: 'Generando página…',
+      // certificates & verify
+      tab_verify: 'Verificar', sg_step4: '4. Certificado digital', cert_on: 'Firmar también con certificado', cert_manage: 'Gestionar identidades…',
+      cert_identity: 'Identidad', cert_pass: 'Contraseña', cert_reason: 'Motivo (opcional)', cert_reason_ph: 'Apruebo este documento', cert_location: 'Lugar (opcional)',
+      cert_note: 'Una firma con certificado sella todo el archivo: cualquier cambio posterior se detecta y los lectores pueden comprobar quién firmó. Se calcula en este equipo con tu propia clave; no interviene ninguna autoridad ni internet. El primer sello colocado se convierte en el cuadro de firma visible; sin sello la firma es invisible.',
+      cert_no_identity: 'Aún no hay identidades. Usa “Gestionar identidades…” para crear una.', cert_need_identity: 'Elige una identidad o crea una primero.', cert_need_pass: 'Introduce la contraseña de la identidad.',
+      id_title: 'Identidades de firma y firmantes de confianza', id_yours: 'Tus identidades', id_empty: 'Aún no hay identidades. Crea una abajo: es una clave privada más un certificado autofirmado, guardados cifrados en este equipo.',
+      id_create: 'Crear una identidad', id_name: 'Nombre', id_email: 'Correo (opcional)', id_org: 'Organización (opcional)', id_country: 'Código de país (opcional)', id_pass: 'Contraseña', id_pass2: 'Repite la contraseña', id_days: 'Validez (días)', id_create_btn: 'Crear identidad',
+      id_import: 'Importar certificado y clave de otra herramienta (PEM)…', id_cert_pem: 'Certificado (PEM)', id_key_pem: 'Clave privada (PEM)', id_key_pass: 'Contraseña de la clave (si está cifrada)', id_store_pass: 'Contraseña para la copia guardada', id_import_btn: 'Importar',
+      id_self_signed: 'autofirmado', id_ca_issued: 'emitido por CA', id_expired: 'caducado', id_valid_until: (d) => `Válido hasta ${d}`, id_fingerprint: 'Huella SHA-256',
+      id_download_cert: 'Descargar certificado', id_csr: 'Solicitar a una CA…', id_install: 'Instalar certificado de CA…', id_delete: 'Eliminar',
+      id_csr_text: 'Introduce la contraseña para generar una solicitud de firma (CSR) de esta clave. Envía el archivo .csr a una autoridad certificadora e instala el certificado que devuelva con “Instalar certificado de CA…”.', id_csr_btn: 'Descargar CSR',
+      id_install_text: 'Pega el certificado (PEM) que la autoridad emitió para esta identidad e introduce la contraseña.', id_install_btn: 'Instalar', id_installed: 'Certificado instalado',
+      id_delete_text: (n) => `¿Eliminar la identidad “${n}”? Su clave privada se borra para siempre; los documentos ya firmados siguen siendo válidos.`,
+      id_pass_mismatch: 'Las contraseñas no coinciden.', id_created: (n) => `Identidad “${n}” creada`, id_imported: (n) => `Identidad “${n}” importada`, id_cert_downloaded: 'Certificado descargado. Entrégalo a quien deba confiar en tu firma.',
+      id_dir: (d) => `Guardado en ${d}`, done: 'Listo', yes: 'sí', no: 'no',
+      tr_title: 'Firmantes de confianza', tr_note: 'Tus propias identidades siempre son de confianza. Añade aquí certificados de otras personas para que sus firmas aparezcan como fiables al verificar.',
+      tr_pem: 'Certificado a confiar (PEM)', tr_add_btn: 'Confiar en este certificado', tr_file: '…o elegir un archivo', tr_remove: 'Quitar', tr_empty: 'Aún no hay firmantes de confianza.', tr_added: (d) => `añadido ${d}`, tr_added_ok: (n) => `Ahora confías en ${n}`,
+      vf_title: 'Comprobar un PDF firmado', vf_pick: 'Elegir PDF', vf_drop: 'Suelta aquí un PDF firmado', vf_drop_sub: 'Cada firma se comprueba en este equipo contra tus firmantes de confianza. No se envía nada a ningún sitio.',
+      vf_pass: 'Contraseña del PDF', vf_pass_go: 'Comprobar de nuevo', vf_checking: (n) => `Comprobando ${n}…`,
+      vf_none: 'Sin firmas digitales', vf_all_valid: (n) => `${n} firma${n === 1 ? '' : 's'} válida${n === 1 ? '' : 's'}`, vf_invalid: 'Firma inválida', vf_modified_after: 'modificado tras la última firma',
+      vf_sig_valid_trusted: 'Válida · firmante de confianza', vf_sig_valid_untrusted: 'Válida · firmante aún no de confianza', vf_sig_invalid: 'INVÁLIDA', vf_unknown_signer: 'firmante desconocido',
+      vf_signed_on: 'Firmado el', vf_email: 'Correo', vf_org: 'Organización', vf_reason: 'Motivo', vf_location: 'Lugar', vf_contact: 'Contacto', vf_issuer: 'Emitido por', vf_cert_valid: 'Validez del certificado',
+      vf_integrity: 'Contenido sin cambios', vf_signature: 'Firma correcta', vf_trusted: 'Firmante de confianza', vf_cert_now: 'Certificado vigente hoy', vf_whole_file: 'Cubre todo el archivo', vf_algo: 'Algoritmos', vf_trust_signer: 'Confiar en este firmante',
     },
   };
   let lang = 'en';
@@ -721,7 +902,7 @@
   const announce = (msg) => { els.announce.textContent = ''; setTimeout(() => { els.announce.textContent = msg; }, 30); };
   const showError = (msg) => { els.error.textContent = msg; els.error.hidden = false; };
   const clearError = () => { els.error.hidden = true; els.error.textContent = ''; };
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const ICON_PDF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></svg>';
   const ICON_IMG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>';
@@ -1236,15 +1417,20 @@
   const sg = {};
   ['tabMerge','tabSign','tabBtnMerge','tabBtnSign','sgDocMeta','sgPick','sgUseResult','sgDoc','sgFile','pad','penWidth','padUndo','padClear','srcDraw','srcUpload','srcType','srcSaved',
    'sigPick','sigFile','removeBg','bgThreshold','typeText','typeFont','savedList','savedEmpty','sigPreview','sigSave','sigPlace','sgStagePanel','pgPrev','pgLabel','pgNext','strip',
-   'stampBar','stampSize','stampAngle','stampAll','stampDel','stage','stagePage','sgGo','sgToMerge','sgStatus','sgError'].forEach((id) => { sg[id] = $(id); });
+   'stampBar','stampSize','stampAngle','stampAll','stampDel','stage','stagePage','sgGo','sgToMerge','sgStatus','sgError',
+   'tabVerify','tabBtnVerify','certOn','certManage','certFields','certIdentity','certIdentityHelp','certPass','certReason','certLocation',
+   'vfPick','vfFile','vfDrop','vfUnlock','vfPass','vfPassGo','vfResult','vfSummary','vfList','vfError',
+   'idOverlay','idClose','idDone','idList','idEmpty','idCreate','idcName','idcEmail','idcOrg','idcCountry','idcPass','idcPass2','idcDays','idcErr',
+   'idImport','idiCert','idiKey','idiKeyPass','idiPass','idiErr','trList','trAdd','trPem','trFile','trFileBtn','trErr','idDir',
+   'askOverlay','askForm','askTitle','askText','askArea','askPass','askErr','askCancel','askOk'].forEach((id) => { sg[id] = $(id); });
 
   // Tabs
   function showTab(name) {
-    const isSign = name === 'sign';
-    sg.tabMerge.hidden = isSign; sg.tabSign.hidden = !isSign;
-    sg.tabBtnMerge.setAttribute('aria-selected', String(!isSign)); sg.tabBtnSign.setAttribute('aria-selected', String(isSign));
+    const isSign = name === 'sign', isVerify = name === 'verify';
+    sg.tabMerge.hidden = isSign || isVerify; sg.tabSign.hidden = !isSign; sg.tabVerify.hidden = !isVerify;
+    sg.tabBtnMerge.setAttribute('aria-selected', String(!isSign && !isVerify)); sg.tabBtnSign.setAttribute('aria-selected', String(isSign)); sg.tabBtnVerify.setAttribute('aria-selected', String(isVerify));
     try { localStorage.setItem('cfm_tab', name); } catch (_) {}
-    if (isSign) { sg.sgUseResult.hidden = !lastResultBlob; if (padNeedsInit) initPad(); }
+    if (isSign) { sg.sgUseResult.hidden = !lastResultBlob; if (padNeedsInit) initPad(); if (!identitiesLoaded) loadIdentities(); }
   }
   document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
@@ -1498,7 +1684,8 @@
     for (let n = 1; n <= sdoc.pages; n++) { if (n === st.page) continue; if (stamps.some((x) => x.page === n && x.sig === st.sig && Math.abs(x.cx - st.cx) < 1e-6 && Math.abs(x.cy - st.cy) < 1e-6)) continue; stamps.push({ ...st, id: stampSeq++, page: n }); }
     updateStrip(); updateSignButtons(); toast(t('sg_placed_n', stamps.length));
   });
-  function updateSignButtons() { const ok = sdoc.pages > 0 && stamps.length > 0; sg.sgGo.disabled = !ok; sg.sgToMerge.disabled = !ok; sg.sigPlace.disabled = !currentSig || !sdoc.pages; sg.sgStatus.textContent = stamps.length ? t('sg_placed_n', stamps.length) : ''; }
+  function certActive() { return sg.certOn.checked && !!sg.certIdentity.value; }
+  function updateSignButtons() { const ok = sdoc.pages > 0 && (stamps.length > 0 || certActive()); sg.sgGo.disabled = !ok; sg.sgToMerge.disabled = !ok; sg.sigPlace.disabled = !currentSig || !sdoc.pages; sg.sgStatus.textContent = stamps.length ? t('sg_placed_n', stamps.length) : ''; }
   const showSgError = (m) => { sg.sgError.textContent = m; sg.sgError.hidden = false; }; const clearSgError = () => { sg.sgError.hidden = true; };
 
   // ----- signing -----
@@ -1509,7 +1696,9 @@
     return new Blob([bytes], { type: mime });
   }
   async function doSign(toMerge) {
-    if (!sdoc.pages) return showSgError(t('sg_need_doc')); if (!stamps.length) return showSgError(t('sg_need_place'));
+    if (!sdoc.pages) return showSgError(t('sg_need_doc')); if (!stamps.length && !certActive()) return showSgError(t('sg_need_place'));
+    if (sg.certOn.checked && !sg.certIdentity.value) return showSgError(t('cert_need_identity'));
+    if (sg.certOn.checked && !sg.certPass.value) { sg.certPass.focus(); return showSgError(t('cert_need_pass')); }
     clearSgError(); sg.sgGo.disabled = true; sg.sgToMerge.disabled = true; sg.sgStatus.textContent = t('sg_signing');
     try {
       const used = [...new Set(stamps.map((s) => s.sig))]; const form = new FormData();
@@ -1517,9 +1706,11 @@
       for (const id of used) { const s = sigs.find((x) => x.id === id); form.append('signature', dataUrlToBlob(s.dataUrl), `signature-${id}.png`); }
       const placements = stamps.map((s) => ({ page: s.page, image: used.indexOf(s.sig), cx: s.cx, cy: s.cy, width: s.w, height: s.h, angle: s.angle }));
       const outName = sdoc.name.replace(/\.pdf$/i, '') + '-signed.pdf';
-      form.append('manifest', JSON.stringify({ placements, output_name: outName }));
+      const manifest = { placements, output_name: outName };
+      if (sg.certOn.checked) manifest.certify = { identity: sg.certIdentity.value, passphrase: sg.certPass.value, reason: sg.certReason.value.trim() || null, location: sg.certLocation.value.trim() || null, visible: 0 };
+      form.append('manifest', JSON.stringify(manifest));
       const res = await api('/api/sign', { method: 'POST', body: form });
-      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || `HTTP ${res.status}`); }
+      if (!res.ok) { const j = await res.json().catch(() => ({})); if (j.code === 'passphrase') { sg.certPass.select(); } throw new Error(j.error || `HTTP ${res.status}`); }
       const blob = await res.blob();
       if (toMerge) { addFiles([new File([blob], outName, { type: 'application/pdf', lastModified: Date.now() })], { sort: false }); toast(t('sg_added')); }
       else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = outName; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
@@ -1529,7 +1720,184 @@
   }
   sg.sgGo.addEventListener('click', () => doSign(false));
   sg.sgToMerge.addEventListener('click', () => doSign(true));
-  try { if (localStorage.getItem('cfm_tab') === 'sign') showTab('sign'); } catch (_) {}
+
+  // ----- digital certificates -----
+  let identitiesLoaded = false, identities = [];
+  async function readJson(res) { const j = await res.json().catch(() => ({})); if (!res.ok) throw Object.assign(new Error(j.error || `HTTP ${res.status}`), { code: j.code }); return j; }
+  async function loadIdentities() {
+    try {
+      identities = await readJson(await api('/api/identities')); identitiesLoaded = true;
+      let remembered = ''; try { remembered = localStorage.getItem('cfm_identity') || ''; } catch (_) {}
+      const current = sg.certIdentity.value || remembered;
+      sg.certIdentity.innerHTML = identities.map((i) => `<option value="${esc(i.id)}">${esc(i.name + (i.email ? ` <${i.email}>` : '') + (i.self_signed ? '' : ' ✓CA'))}</option>`).join('');
+      if (identities.some((i) => i.id === current)) sg.certIdentity.value = current;
+      sg.certIdentityHelp.textContent = identities.length ? '' : t('cert_no_identity');
+      renderIdentityList();
+    } catch (err) { if (err.code !== 'unauthorized') sg.certIdentityHelp.textContent = err.message; }
+    updateSignButtons();
+  }
+  sg.certOn.addEventListener('change', () => { sg.certFields.hidden = !sg.certOn.checked; if (sg.certOn.checked && !identities.length) openIdentities(); updateSignButtons(); });
+  sg.certIdentity.addEventListener('change', () => { try { localStorage.setItem('cfm_identity', sg.certIdentity.value); } catch (_) {} updateSignButtons(); });
+  sg.certManage.addEventListener('click', openIdentities);
+
+  // Small prompt used for passphrases, PEM input and confirmations. Resolves to null on cancel.
+  let askResolve = null;
+  function ask({ title, text, pass = false, area = false, ok }) {
+    sg.askTitle.textContent = title; sg.askText.textContent = text || ''; sg.askOk.textContent = ok || 'OK';
+    sg.askPass.hidden = !pass; sg.askArea.hidden = !area; sg.askPass.value = ''; sg.askArea.value = ''; sg.askErr.hidden = true;
+    sg.askOverlay.hidden = false; (pass ? sg.askPass : area ? sg.askArea : sg.askOk).focus();
+    return new Promise((resolve) => { askResolve = resolve; });
+  }
+  function askDone(value) { sg.askOverlay.hidden = true; const r = askResolve; askResolve = null; if (r) r(value); }
+  sg.askCancel.addEventListener('click', () => askDone(null));
+  sg.askForm.addEventListener('submit', (e) => { e.preventDefault(); askDone({ pass: sg.askPass.value, text: sg.askArea.value }); });
+  sg.askOverlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') askDone(null); });
+
+  function downloadText(name, text, mime) { const url = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain' })); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
+
+  async function openIdentities() { sg.idOverlay.hidden = false; await loadIdentities(); await loadTrusted(); sg.idcName.focus(); }
+  function closeIdentities() { sg.idOverlay.hidden = true; }
+  sg.idClose.addEventListener('click', closeIdentities); sg.idDone.addEventListener('click', closeIdentities);
+  sg.idOverlay.addEventListener('click', (e) => { if (e.target === sg.idOverlay) closeIdentities(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sg.idOverlay.hidden && sg.askOverlay.hidden) closeIdentities(); });
+
+  function renderIdentityList() {
+    sg.idEmpty.hidden = identities.length > 0;
+    sg.idList.innerHTML = identities.map((i) => `
+      <div class="id-card" data-id="${esc(i.id)}">
+        <div class="info"><b>${esc(i.name)} <span class="tag ${i.self_signed ? 'warn' : 'ok'}">${i.self_signed ? t('id_self_signed') : t('id_ca_issued')}</span>${i.valid_now ? '' : ` <span class="tag bad">${t('id_expired')}</span>`}</b>
+          <div class="sub">${esc([i.email, i.organization].filter(Boolean).join(' · '))}</div>
+          <div class="sub">${t('id_valid_until', esc(i.not_after))} · ${esc(i.key_algorithm)} · id ${esc(i.id)}</div>
+          <div class="sub">${t('id_fingerprint')}: ${esc(i.fingerprint)}</div></div>
+        <div class="acts">
+          <button class="btn ghost small" data-act="cert">${t('id_download_cert')}</button>
+          <button class="btn ghost small" data-act="csr">${t('id_csr')}</button>
+          <button class="btn ghost small" data-act="install">${t('id_install')}</button>
+          <button class="btn ghost small" data-act="delete" style="color:var(--danger)">${t('id_delete')}</button>
+        </div>
+      </div>`).join('');
+  }
+  sg.idList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]'); if (!btn) return;
+    const id = btn.closest('.id-card').dataset.id; const ident = identities.find((i) => i.id === id); if (!ident) return;
+    try {
+      if (btn.dataset.act === 'cert') {
+        const res = await api(`/api/identities/${encodeURIComponent(id)}/certificate`); if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        downloadText(`${ident.name}.crt`, await res.text(), 'application/x-pem-file'); toast(t('id_cert_downloaded'));
+      } else if (btn.dataset.act === 'csr') {
+        const a = await ask({ title: t('id_csr'), text: t('id_csr_text'), pass: true, ok: t('id_csr_btn') }); if (!a) return;
+        const res = await api(`/api/identities/${encodeURIComponent(id)}/csr`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ passphrase: a.pass }) });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+        downloadText(`${ident.name}.csr`, await res.text(), 'application/pkcs10');
+      } else if (btn.dataset.act === 'install') {
+        const a = await ask({ title: t('id_install'), text: t('id_install_text'), pass: true, area: true, ok: t('id_install_btn') }); if (!a) return;
+        await readJson(await api(`/api/identities/${encodeURIComponent(id)}/install`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cert_pem: a.text, passphrase: a.pass }) }));
+        toast(t('id_installed')); await loadIdentities();
+      } else if (btn.dataset.act === 'delete') {
+        const a = await ask({ title: t('id_delete'), text: t('id_delete_text', ident.name), ok: t('id_delete') }); if (!a) return;
+        const res = await api(`/api/identities/${encodeURIComponent(id)}`, { method: 'DELETE' }); if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadIdentities();
+      }
+    } catch (err) { if (err.code !== 'unauthorized') toast(err.message); }
+  });
+  sg.idCreate.addEventListener('submit', async (e) => {
+    e.preventDefault(); sg.idcErr.textContent = '';
+    if (sg.idcPass.value !== sg.idcPass2.value) { sg.idcErr.textContent = t('id_pass_mismatch'); return; }
+    try {
+      const info = await readJson(await api('/api/identities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        name: sg.idcName.value, email: sg.idcEmail.value || null, organization: sg.idcOrg.value || null, country: sg.idcCountry.value.toUpperCase() || null,
+        passphrase: sg.idcPass.value, valid_days: Number(sg.idcDays.value) || 1095 }) }));
+      sg.idCreate.reset(); sg.idcDays.value = '1095'; toast(t('id_created', info.name));
+      await loadIdentities(); sg.certIdentity.value = info.id; try { localStorage.setItem('cfm_identity', info.id); } catch (_) {} updateSignButtons();
+    } catch (err) { if (err.code !== 'unauthorized') sg.idcErr.textContent = err.message; }
+  });
+  sg.idImport.addEventListener('submit', async (e) => {
+    e.preventDefault(); sg.idiErr.textContent = '';
+    try {
+      const info = await readJson(await api('/api/identities/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        cert_pem: sg.idiCert.value, key_pem: sg.idiKey.value, key_passphrase: sg.idiKeyPass.value || null, passphrase: sg.idiPass.value }) }));
+      sg.idImport.reset(); toast(t('id_imported', info.name)); await loadIdentities();
+    } catch (err) { if (err.code !== 'unauthorized') sg.idiErr.textContent = err.message; }
+  });
+
+  // Trust store
+  let trusted = [];
+  async function loadTrusted() {
+    try { trusted = await readJson(await api('/api/trust')); } catch (err) { trusted = []; }
+    sg.trList.innerHTML = trusted.length ? trusted.map((c) => `
+      <div class="id-card" data-fp="${esc(c.fingerprint)}">
+        <div class="info"><b>${esc(c.common_name)}${c.valid_now ? '' : ` <span class="tag bad">${t('id_expired')}</span>`}</b>
+          <div class="sub">${esc([c.email, c.organization].filter(Boolean).join(' · '))}</div>
+          <div class="sub">${t('id_valid_until', esc(c.not_after))} · ${t('tr_added', esc(c.added))}</div>
+          <div class="sub">${t('id_fingerprint')}: ${esc(c.fingerprint)}</div></div>
+        <div class="acts"><button class="btn ghost small" data-act="untrust" style="color:var(--danger)">${t('tr_remove')}</button></div>
+      </div>`).join('') : `<p class="empty" style="margin:0">${t('tr_empty')}</p>`;
+    try { const cfg = await (await api('/api/config')).json(); sg.idDir.textContent = t('id_dir', cfg.data_dir || ''); } catch (_) {}
+  }
+  sg.trList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act=untrust]'); if (!btn) return;
+    const fp = btn.closest('.id-card').dataset.fp;
+    try { const res = await api(`/api/trust/${encodeURIComponent(fp)}`, { method: 'DELETE' }); if (!res.ok) throw new Error(`HTTP ${res.status}`); await loadTrusted(); }
+    catch (err) { if (err.code !== 'unauthorized') toast(err.message); }
+  });
+  async function trustPem(pem) {
+    const info = await readJson(await api('/api/trust', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cert_pem: pem }) }));
+    toast(t('tr_added_ok', info.common_name)); await loadTrusted(); return info;
+  }
+  sg.trAdd.addEventListener('submit', async (e) => { e.preventDefault(); sg.trErr.textContent = ''; try { await trustPem(sg.trPem.value); sg.trPem.value = ''; } catch (err) { if (err.code !== 'unauthorized') sg.trErr.textContent = err.message; } });
+  sg.trFileBtn.addEventListener('click', () => sg.trFile.click());
+  sg.trFile.addEventListener('change', async () => { const f = sg.trFile.files[0]; sg.trFile.value = ''; if (f) sg.trPem.value = await f.text(); });
+
+  // ----- verify -----
+  let vfCurrent = null;
+  const showVfError = (m) => { sg.vfError.textContent = m; sg.vfError.hidden = false; };
+  sg.vfPick.addEventListener('click', () => sg.vfFile.click());
+  sg.vfFile.addEventListener('change', () => { if (sg.vfFile.files[0]) verifyFile(sg.vfFile.files[0]); sg.vfFile.value = ''; });
+  sg.vfDrop.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); sg.vfDrop.classList.add('over'); });
+  sg.vfDrop.addEventListener('dragleave', () => sg.vfDrop.classList.remove('over'));
+  sg.vfDrop.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); sg.vfDrop.classList.remove('over'); const f = [...e.dataTransfer.files].find((x) => /\.pdf$/i.test(x.name) || x.type === 'application/pdf'); if (f) verifyFile(f); });
+  sg.vfPassGo.addEventListener('click', () => { if (vfCurrent) verifyFile(vfCurrent, sg.vfPass.value); });
+  sg.vfPass.addEventListener('keydown', (e) => { if (e.key === 'Enter') sg.vfPassGo.click(); });
+  async function verifyFile(file, password) {
+    vfCurrent = file; sg.vfError.hidden = true; sg.vfResult.hidden = true; sg.vfUnlock.hidden = true;
+    sg.vfDrop.querySelector('strong').textContent = t('vf_checking', file.name);
+    try {
+      const form = new FormData(); form.append('file', file, file.name); if (password) form.append('password', password);
+      const res = await api('/api/verify', { method: 'POST', body: form });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { if (j.code === 'encrypted' || j.code === 'wrong_password') { sg.vfUnlock.hidden = false; sg.vfPass.focus(); } throw new Error(j.error || `HTTP ${res.status}`); }
+      renderVerify(file.name, j);
+    } catch (err) { if (err.code !== 'unauthorized') showVfError(err.message); }
+    finally { sg.vfDrop.querySelector('strong').textContent = t('vf_drop'); }
+  }
+  function renderVerify(name, r) {
+    sg.vfResult.hidden = false;
+    const n = r.signatures.length;
+    const overall = !n ? `<span class="tag warn">${t('vf_none')}</span>` : r.all_valid ? `<span class="tag ok">${t('vf_all_valid', n)}</span>` : `<span class="tag bad">${t('vf_invalid')}</span>`;
+    sg.vfSummary.innerHTML = `${overall} <span>${esc(name)}</span>${r.modified_after_last_signature ? ` <span class="tag warn">${t('vf_modified_after')}</span>` : ''}`;
+    const yes = (b) => b ? `<span class="tag ok">${t('yes')}</span>` : `<span class="tag bad">${t('no')}</span>`;
+    sg.vfList.innerHTML = r.signatures.map((sig, i) => {
+      const valid = sig.integrity_ok && sig.signature_ok;
+      const who = sig.signer ? esc(sig.signer.common_name) : t('vf_unknown_signer');
+      const status = !valid ? `<span class="tag bad">${t('vf_sig_invalid')}</span>` : sig.trusted ? `<span class="tag ok">${t('vf_sig_valid_trusted')}</span>` : `<span class="tag warn">${t('vf_sig_valid_untrusted')}</span>`;
+      const row = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+      return `<div class="vf-sig" data-i="${i}">
+        <div class="head">${status} <span>${esc(sig.field)} · ${who}</span></div>
+        <dl>${row(t('vf_signed_on'), esc(sig.signing_time))}${row(t('vf_reason'), esc(sig.reason))}${row(t('vf_location'), esc(sig.location))}${row(t('vf_contact'), esc(sig.contact))}
+          ${sig.signer ? row(t('vf_email'), esc(sig.signer.email)) + row(t('vf_org'), esc(sig.signer.organization)) + row(t('vf_issuer'), esc(sig.signer.issuer)) + row(t('vf_cert_valid'), esc(`${sig.signer.not_before} → ${sig.signer.not_after}`)) : ''}</dl>
+        <dl><dt>${t('vf_integrity')}</dt><dd>${yes(sig.integrity_ok)}</dd><dt>${t('vf_signature')}</dt><dd>${yes(sig.signature_ok)}</dd><dt>${t('vf_trusted')}</dt><dd>${yes(sig.trusted)}</dd>
+          <dt>${t('vf_cert_now')}</dt><dd>${yes(sig.certificate_valid_now)}</dd><dt>${t('vf_whole_file')}</dt><dd>${yes(sig.covers_whole_file)}</dd>
+          <dt>${t('vf_algo')}</dt><dd>${esc(sig.signature_algorithm)} / ${esc(sig.digest_algorithm)}</dd>${sig.signer ? row(t('id_fingerprint'), esc(sig.signer.fingerprint)) : ''}</dl>
+        ${sig.problems.length ? `<ul class="problems">${sig.problems.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}
+        ${valid && !sig.trusted && sig.signer_certificate_pem ? `<div class="acts"><button class="btn small" data-act="trust">${t('vf_trust_signer')}</button></div>` : ''}
+      </div>`;
+    }).join('');
+    sg.vfList.querySelectorAll('button[data-act=trust]').forEach((b) => b.addEventListener('click', async () => {
+      const i = Number(b.closest('.vf-sig').dataset.i);
+      try { await trustPem(r.signatures[i].signer_certificate_pem); if (vfCurrent) verifyFile(vfCurrent, sg.vfPass.value); } catch (err) { if (err.code !== 'unauthorized') toast(err.message); }
+    }));
+  }
+  try { const tab = localStorage.getItem('cfm_tab'); if (tab === 'sign' || tab === 'verify') showTab(tab); } catch (_) {}
 
   // ---------- startup ----------
   els.lang.addEventListener('change', () => { lang = els.lang.value; try { localStorage.setItem('cfm_lang', lang); } catch (_) {} applyLang(); });

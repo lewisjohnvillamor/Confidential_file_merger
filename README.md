@@ -38,6 +38,16 @@ to anyone, nothing phones home, nothing is logged about your documents.
   pen, upload a photo or scan (the white paper becomes transparent), or type your name.
   Drag it onto the page, resize and rotate it, stamp it on every page, and download. The
   signature is embedded as a transparent PNG; nothing else on the page changes.
+- **Real digital signatures, offline.** Create your own signing identity (an ECDSA P-256
+  key and a self-signed X.509 certificate, encrypted with a passphrase and stored on this
+  machine) and seal the file with a standard PKCS#7 signature that Acrobat and other
+  readers understand. Any later change is detectable, several people can sign in sequence,
+  and no certificate authority, timestamp service or internet connection is involved. If
+  you do want a CA, the same identity can produce a signing request and install the
+  certificate it gets back.
+- **Verify signatures.** A Verify tab checks every signature in a PDF against your own
+  trust list and reports who signed, when, why, whether the bytes are untouched and whether
+  anything was appended afterwards.
 - **Document properties.** Title, author, subject and keywords, set from the GUI or CLI.
 - **Unlimited.** No file count, size, or "merges per day" limits. Merge, tweak the list,
   merge again. Feed the result back into the list and keep going.
@@ -130,8 +140,61 @@ Open the **Sign** tab.
 
 Signatures are stamped as transparent images with a soft mask, so they sit cleanly over
 text and lines. The placement follows the page exactly as displayed, including pages that
-carry a rotation. This is a visual signature, not a cryptographic one: it proves nothing by
-itself, exactly like signing on paper.
+carry a rotation. On its own this is a visual signature: it looks like ink on paper and
+proves about as much.
+
+### Digital certificates
+
+Section **4. Digital certificate** of the Sign tab turns that ink into a cryptographic
+signature. Tick *Also sign with a certificate*, pick an identity, type its passphrase, and
+the downloaded PDF carries a standard detached PKCS#7 (`adbe.pkcs7.detached`) signature
+over the whole file. Readers that understand PDF signatures show the signer, the time and
+whether the document has been altered; the first stamp you placed becomes the visible
+signature box, and with no stamp at all the signature is invisible but still there.
+
+**This is completely offline.** A digital signature is arithmetic on a private key you
+hold, not a call to a service. Press *Manage identities…* and *Create identity* to make
+one: the app generates an ECDSA P-256 key, wraps it in a self-signed certificate with your
+name, email and organisation, encrypts the key with your passphrase (PKCS#8, PBES2) and
+writes it to the data folder shown at the bottom of that dialog. Nothing leaves the
+machine, and the same is true of signing and of verification.
+
+A self-signed certificate is trusted by the people you give it to, and nobody else — the
+same trust model as an SSH key. Press *Download certificate* and hand the `.crt` file to
+whoever needs to check your signatures; they add it under *Trusted signers*. Your own
+identities are always trusted on your own machine.
+
+If you need a signature that strangers' PDF readers trust automatically, that is exactly
+what a certificate authority sells. The identity you just made can ask one: *Request from
+a CA…* writes a certificate signing request (CSR) for the same key, and *Install CA
+certificate…* replaces the self-signed certificate with the one the authority issues. The
+key never moves. You can also *Import* a certificate and key you already own (a
+personal/eID certificate, a company code-signing key) as PEM.
+
+### Verifying
+
+![The Verify tab showing a valid signature and its certificate details](docs/screenshot-verify.png)
+
+The **Verify** tab takes any PDF and reports, for every signature it finds: the signer's
+name, email, organisation and certificate fingerprint, the signing time, reason and
+location, whether the signed bytes are unchanged, whether the signature itself checks out,
+whether the certificate is currently valid, whether the signature covers the whole file,
+and whether the signer is in your trust list. A valid signature from someone you have not
+trusted yet offers a *Trust this signer* button. Everything is computed locally.
+
+Notes on what the guarantees mean:
+
+- **Content unchanged / signature checks out** are the cryptographic facts: the SHA-256
+  digest over the signed byte ranges matches and the signature verifies against the
+  certificate's public key. Change one byte of the document and both fail.
+- **Signer trusted** is your decision, not maths. It only means the certificate (or its
+  issuer) is in your trust list.
+- **Covers whole file** is false for every signature except the last one when a document
+  has been signed more than once — each new signature is appended, so earlier ones cover
+  less than the current file. That is normal and expected.
+- There is no timestamp authority, so the signing time is the signer's own clock, and
+  signatures are not "long-term validation" (LTV) material. That is the price of never
+  talking to anybody; for most private documents it is the right trade.
 
 ## Server options
 
@@ -151,12 +214,22 @@ Options:
   --max-upload-mb <MB>             Cap the total upload size per merge (0 = unlimited)
   --max-concurrent-merges <N>      Merges allowed at the same time; others wait [default: 2]
   --log-format <text|json>         Log line format [default: text]
+  --data-dir <DIR>                 Where signing identities and trusted certificates live
+                                   [default: the platform config folder]
 ```
 
 Every option can also be set with an environment variable: `CFM_HOST`, `CFM_PORT`,
 `CFM_ACCESS_TOKEN`, `CFM_TLS_CERT`, `CFM_TLS_KEY`, `CFM_TLS_SELF_SIGNED`,
 `CFM_ALLOW_LOCAL_FOLDERS`, `CFM_FOLDER_ROOT`, `CFM_MAX_UPLOAD_MB`,
-`CFM_MAX_CONCURRENT_MERGES`, `CFM_LOG_FORMAT`.
+`CFM_MAX_CONCURRENT_MERGES`, `CFM_LOG_FORMAT`, `CFM_DATA_DIR`.
+
+Identities and trusted certificates are kept in `--data-dir`, by default
+`~/.config/confidential_file_merger` on Linux,
+`~/Library/Application Support/confidential_file_merger` on macOS and
+`%APPDATA%\confidential_file_merger` on Windows. Private keys are stored encrypted, with
+file permissions `0600` on Unix. Back that folder up (and keep the backup as safe as the
+passphrase); delete it to forget every identity. In Docker, mount it as a volume if you
+want identities to survive the container.
 
 `GET /healthz` answers `{"status":"ok"}` without authentication, for container health checks.
 
@@ -224,6 +297,31 @@ confidential_file_merger sign -o signed.pdf 'form.pdf?password=x' --signature in
   --pages all --at 0.15,0.1 --width 0.12 --angle -5
 ```
 
+```sh
+# Make a signing identity once (the passphrase can come from CFM_PASSPHRASE instead).
+confidential_file_merger identity create --name 'Lewis John Villamor' \
+  --email lewis@example.com --organization 'Example Ltd' --passphrase 'a long passphrase'
+confidential_file_merger identity list
+
+# Sign with the certificate; --signature is optional (without it the signature is invisible).
+confidential_file_merger sign -o signed.pdf contract.pdf --signature sig.png \
+  --identity 'Lewis John Villamor' --passphrase 'a long passphrase' \
+  --reason 'I approve this document' --location Manila
+
+# Check a file. Exit code 0 = every signature valid, 2 = invalid or unsigned.
+confidential_file_merger verify signed.pdf
+confidential_file_merger verify signed.pdf --json
+
+# Share your certificate; trust someone else's.
+confidential_file_merger identity export-cert <id> > lewis.crt
+confidential_file_merger trust add theirs.crt
+confidential_file_merger trust list
+
+# Ask a certificate authority for a real certificate for the same key.
+confidential_file_merger identity csr <id> --passphrase '…' > lewis.csr
+confidential_file_merger identity install <id> --cert from-ca.crt --passphrase '…'
+```
+
 Per-file options after `?`: `pages=` (ranges, `odd`, `even`, `last`; either direction),
 `rotate=` (whole file), `rotateN=` (page N), `password=`. `--password` applies to every
 encrypted input. `--no-bookmarks`, `--no-source-outlines`, `--no-forms`, `--no-optimize`,
@@ -240,7 +338,11 @@ Everything the GUI does goes through a small JSON/multipart API you can script:
 | `POST /api/merge` | Multipart `file`/`path` fields in order plus `page_size`, `margin`, `output_name`, `password`, or a `manifest` JSON field. Responds with the PDF. |
 | `POST /api/jobs` | Same form, returns `{id}` at once. `GET /api/jobs/{id}` reports `queued`/`running` (step, total, label)/`done`/`error`; `GET /api/jobs/{id}/result` returns the PDF once and forgets the job. Jobs expire after 15 minutes. |
 | `POST /api/inspect` | One `file`/`path`, optional `password`, `thumbs=none\|first\|all`, `page=N` for one page, `max_edge`, `max_pages`. Returns page count, encryption state, page sizes and PNG thumbnails. |
-| `POST /api/sign` | The PDF as `file`/`path`, optional `password`, one or more `signature` images, and a `manifest` with `placements` (`page`, `image`, `cx`, `cy`, `width`, `height` as fractions of the displayed page, `angle` in degrees) and `output_name`. Responds with the signed PDF. |
+| `POST /api/sign` | The PDF as `file`/`path`, optional `password`, one or more `signature` images, and a `manifest` with `placements` (`page`, `image`, `cx`, `cy`, `width`, `height` as fractions of the displayed page, `angle` in degrees), `output_name`, and optionally `certify` (`identity`, `passphrase`, `reason`, `location`, `contact`, `visible`) to add a certificate signature. Responds with the signed PDF. |
+| `POST /api/verify` | One `file`/`path`, optional `password`. Returns a JSON report of every signature: signer certificate details, times, integrity, trust, and problems. |
+| `GET/POST /api/identities` | List identities, or create one from `{name, email, organization, country, passphrase, valid_days}`. `POST /api/identities/import` takes `{cert_pem, key_pem, key_passphrase, passphrase}`. |
+| `DELETE /api/identities/{id}` | Forget an identity and its key. `GET .../certificate` downloads the certificate (PEM), `POST .../csr` returns a signing request, `POST .../install` installs a CA-issued certificate. |
+| `GET/POST /api/trust` | List trusted certificates, or trust one with `{cert_pem}`. `DELETE /api/trust/{fingerprint}` removes it. |
 | `POST /api/folder/scan` | `{"path": "...", "recursive": false}` (opt-in). |
 | `POST /api/login`, `POST /api/logout` | Token cookie handling. `GET /api/config` describes the server. |
 
@@ -264,6 +366,13 @@ The manifest carries per-item settings (`pages` as a range string or array, `rot
 - **Web server** is [`axum`](https://crates.io/crates/axum) with `rustls` for TLS. The GUI
   is a single HTML file compiled into the binary; it loads no external fonts, scripts, or
   styles.
+- **Digital signatures** use the [RustCrypto](https://github.com/RustCrypto) stack:
+  `x509-cert` for certificates and signing requests, `p256`/`rsa` for keys, `pkcs8` for the
+  encrypted key files, `cms` for the PKCS#7 SignedData blob and `sha2` for the digests. The
+  signature is added as an incremental update: the original bytes are left untouched, a
+  signature dictionary with a `/ByteRange` and a `/Contents` placeholder is appended, then
+  the placeholder is filled with the CMS structure computed over those exact ranges. That
+  is why an earlier signature stays valid when a second person signs.
 
 ## Privacy checklist
 
@@ -271,7 +380,9 @@ The manifest carries per-item settings (`pages` as a range string or array, `rot
 | --- | --- |
 | Are files uploaded anywhere? | Only to the server you started, over the address you chose. Default is `127.0.0.1`, unreachable from other machines. |
 | Does the page load anything remote? | No. CSP `connect-src 'self'` makes the browser block it even if a bug tried. |
-| Are files written to disk? | No. Merging happens in memory. Downloads are written by *your* browser. The queue that survives a refresh lives in your browser's own storage, never on the server, and never includes passwords. |
+| Are files written to disk? | No. Merging happens in memory. Downloads are written by *your* browser. The queue that survives a refresh lives in your browser's own storage, never on the server, and never includes passwords. The one exception is what you ask to be saved: signing identities and trusted certificates, in the data folder. |
+| Do digital signatures need the internet? | No. Keys are generated, used and checked locally. There is no certificate authority, no timestamp server and no revocation lookup. |
+| Where does my private key go? | Nowhere. It stays in the data folder, encrypted with your passphrase, and is decrypted in memory only for the moment of signing. The passphrase is never stored. |
 | Is anything logged? | One line per merge with the number of inputs and byte sizes. Never file names or content. |
 | Telemetry, analytics, update checks? | None. |
 
@@ -311,6 +422,12 @@ unlocked with the right password.
 - **HEIC and AVIF photos.** No pure-Rust decoder exists for them; convert to JPEG first.
 - **PDF/A output.** Proper PDF/A needs font embedding checks and colour profiles; this
   tool preserves whatever the inputs contain rather than claiming conformance.
+- **PAdES long-term validation.** Signatures are standard CMS, but there is no trusted
+  timestamp, no OCSP/CRL evidence and no signed document timestamp, because collecting
+  those means talking to servers. Signatures verify on their own merits, not against a
+  chain of dated authorities.
+- **Smart cards and hardware tokens.** Keys are software keys in the data folder; PKCS#11
+  devices are not driven yet.
 - **A desktop app wrapper and an in-browser (WebAssembly) mode.** The engine is written to
   allow both; they are separate build targets and not part of this release.
 

@@ -3,8 +3,10 @@
 //! `confidential_file_merger` starts the local web GUI.
 //! `confidential_file_merger merge -o out.pdf a.pdf 'b.pdf?pages=1-3' some_folder/` merges from the CLI.
 
+mod certs;
 mod images;
 mod merge;
+mod pades;
 mod pagespec;
 mod preview;
 mod sign;
@@ -21,7 +23,7 @@ use axum::{
     http::{header, HeaderMap, HeaderValue, Request, StatusCode},
     middleware::{self, Next},
     response::{Html, IntoResponse, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use clap::{Parser, Subcommand, ValueEnum};
@@ -55,8 +57,130 @@ struct Cli {
 enum Command {
     /// Merge files and folders from the command line, no browser needed.
     Merge(MergeArgs),
-    /// Stamp a transparent signature image onto pages of a PDF.
+    /// Stamp a signature image onto pages of a PDF, and optionally sign it with a certificate.
     Sign(SignArgs),
+    /// Check the digital signatures of a PDF (offline; trusts the local trust store).
+    Verify(VerifyArgs),
+    /// Manage signing identities (certificate + private key) stored on this machine.
+    #[command(subcommand)]
+    Identity(IdentityCommand),
+    /// Manage the trust store used when verifying signatures.
+    #[command(subcommand)]
+    Trust(TrustCommand),
+}
+
+#[derive(clap::Args, Debug)]
+struct VerifyArgs {
+    /// PDF to check. May carry `?password=` like merge inputs.
+    input: String,
+
+    /// Print the full report as JSON.
+    #[arg(long)]
+    json: bool,
+
+    /// Folder holding identities and the trust store.
+    #[arg(long, env = "CFM_DATA_DIR")]
+    data_dir: Option<PathBuf>,
+}
+
+#[derive(Subcommand, Debug)]
+enum IdentityCommand {
+    /// Create a new self-signed identity (ECDSA P-256, key encrypted with a passphrase).
+    Create {
+        /// Name shown as the signer (the certificate's common name).
+        #[arg(long)]
+        name: String,
+        #[arg(long)]
+        email: Option<String>,
+        #[arg(long)]
+        organization: Option<String>,
+        /// Two-letter country code.
+        #[arg(long)]
+        country: Option<String>,
+        /// Passphrase protecting the private key (or set CFM_PASSPHRASE).
+        #[arg(long, env = "CFM_PASSPHRASE", hide_env_values = true)]
+        passphrase: String,
+        /// Certificate validity in days.
+        #[arg(long, default_value_t = 1095)]
+        valid_days: u32,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// List stored identities.
+    List {
+        #[arg(long)]
+        json: bool,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Import a certificate and private key (PEM) from another tool or a CA.
+    Import {
+        #[arg(long)]
+        cert: PathBuf,
+        #[arg(long)]
+        key: PathBuf,
+        /// Passphrase of the key file being imported, if it is encrypted.
+        #[arg(long)]
+        key_passphrase: Option<String>,
+        /// Passphrase protecting the stored copy (or set CFM_PASSPHRASE).
+        #[arg(long, env = "CFM_PASSPHRASE", hide_env_values = true)]
+        passphrase: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Print an identity's certificate (PEM) so others can add it to their trust store.
+    ExportCert {
+        id: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Print a certificate signing request (PEM) to send to a certificate authority.
+    Csr {
+        id: String,
+        #[arg(long, env = "CFM_PASSPHRASE", hide_env_values = true)]
+        passphrase: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Replace an identity's self-signed certificate with one issued by a CA for its key.
+    Install {
+        id: String,
+        #[arg(long)]
+        cert: PathBuf,
+        #[arg(long, env = "CFM_PASSPHRASE", hide_env_values = true)]
+        passphrase: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Delete an identity (its private key is gone for good).
+    Delete {
+        id: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum TrustCommand {
+    /// Trust a certificate (PEM) so signatures made with it verify as trusted.
+    Add {
+        cert: PathBuf,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// List trusted certificates.
+    List {
+        #[arg(long)]
+        json: bool,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
+    /// Remove a trusted certificate by fingerprint (a prefix is enough).
+    Remove {
+        fingerprint: String,
+        #[arg(long, env = "CFM_DATA_DIR")]
+        data_dir: Option<PathBuf>,
+    },
 }
 
 #[derive(clap::Args, Debug)]
@@ -69,8 +193,37 @@ struct SignArgs {
     input: String,
 
     /// Signature image (PNG with transparency works best; white backgrounds are kept as-is).
-    #[arg(short, long)]
-    signature: PathBuf,
+    #[arg(short, long, required_unless_present = "identity")]
+    signature: Option<PathBuf>,
+
+    /// Also sign digitally with this stored identity (id or name, see `identity list`).
+    #[arg(long)]
+    identity: Option<String>,
+
+    /// Passphrase of the identity's private key (or set CFM_PASSPHRASE).
+    #[arg(
+        long,
+        env = "CFM_PASSPHRASE",
+        hide_env_values = true,
+        requires = "identity"
+    )]
+    passphrase: Option<String>,
+
+    /// Reason recorded in the digital signature.
+    #[arg(long, requires = "identity")]
+    reason: Option<String>,
+
+    /// Location recorded in the digital signature.
+    #[arg(long, requires = "identity")]
+    location: Option<String>,
+
+    /// Contact info recorded in the digital signature.
+    #[arg(long, requires = "identity")]
+    contact: Option<String>,
+
+    /// Folder holding identities and the trust store.
+    #[arg(long, env = "CFM_DATA_DIR")]
+    data_dir: Option<PathBuf>,
 
     /// Pages to stamp: a selection such as `last`, `1`, `1-3,odd`, or `all`.
     #[arg(long, default_value = "last")]
@@ -157,6 +310,10 @@ struct ServeArgs {
     /// Open the GUI in the default browser once the server is listening.
     #[arg(long)]
     open: bool,
+
+    /// Folder holding signing identities and the trust store (created on first use).
+    #[arg(long, env = "CFM_DATA_DIR")]
+    data_dir: Option<PathBuf>,
 }
 
 #[derive(clap::Args, Debug)]
@@ -226,6 +383,9 @@ async fn main() {
     let result = match cli.command {
         Some(Command::Merge(args)) => run_merge_cli(args),
         Some(Command::Sign(args)) => run_sign_cli(args),
+        Some(Command::Verify(args)) => run_verify_cli(args),
+        Some(Command::Identity(cmd)) => run_identity_cli(cmd),
+        Some(Command::Trust(cmd)) => run_trust_cli(cmd),
         None => serve(cli.serve).await,
     };
     if let Err(err) = result {
@@ -284,14 +444,51 @@ fn run_merge_cli(args: MergeArgs) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn open_store(dir: Option<PathBuf>) -> Result<certs::Store, certs::CertError> {
+    certs::Store::open(dir.unwrap_or_else(certs::Store::default_dir))
+}
+
+/// Find an identity by id, id prefix, or exact name.
+fn find_identity(
+    store: &certs::Store,
+    needle: &str,
+) -> Result<certs::IdentityInfo, certs::CertError> {
+    let all = store.list();
+    let found: Vec<_> = all
+        .iter()
+        .filter(|i| i.id == needle || i.name == needle)
+        .collect();
+    let found = if found.is_empty() {
+        all.iter().filter(|i| i.id.starts_with(needle)).collect()
+    } else {
+        found
+    };
+    match found.as_slice() {
+        [one] => Ok((*one).clone()),
+        [] => Err(certs::CertError(format!(
+            "no identity matches \"{needle}\""
+        ))),
+        _ => Err(certs::CertError(format!(
+            "\"{needle}\" matches several identities; use the id"
+        ))),
+    }
+}
+
 fn run_sign_cli(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     let (path, spec) = pagespec::parse_input_arg(&args.input)?;
     let mut input = read_input(Path::new(&path))?;
     input.password = spec.password;
-    let signature = std::fs::read(&args.signature)?;
-    let (sig_w, sig_h) = image::load_from_memory(&signature)
-        .map(|img| (img.width() as f64, img.height() as f64))
-        .map_err(|e| format!("{}: {e}", args.signature.display()))?;
+    let signature = match &args.signature {
+        Some(file) => Some(std::fs::read(file)?),
+        None => None,
+    };
+    let aspect = match (&signature, &args.signature) {
+        (Some(bytes), Some(file)) => image::load_from_memory(bytes)
+            .map(|img| img.height() as f64 / img.width() as f64)
+            .map_err(|e| format!("{}: {e}", file.display()))?,
+        // A certificate-only signature box: a wide rectangle for the name and date.
+        _ => 0.35,
+    };
 
     // Height follows the image's aspect ratio on each page's own dimensions.
     let (doc, _) = merge::load_pdf(&input)?;
@@ -301,7 +498,7 @@ fn run_sign_cli(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
     for page_no in selected {
         let (pw, ph) = merge::page_size_pt(&doc, pages[&page_no]);
         let width_pt = args.width * pw as f64;
-        let height_pt = width_pt * sig_h / sig_w;
+        let height_pt = width_pt * aspect;
         placements.push(sign::Placement {
             page: page_no,
             image: 0,
@@ -312,15 +509,268 @@ fn run_sign_cli(args: SignArgs) -> Result<(), Box<dyn std::error::Error>> {
             angle: args.angle,
         });
     }
-    let pdf = sign::sign(&input, &[signature], &placements)?;
+
+    let mut certified = false;
+    let pdf = match (&args.identity, &signature) {
+        (Some(identity), _) => {
+            let store = open_store(args.data_dir.clone())?;
+            let info = find_identity(&store, identity)?;
+            let passphrase = args
+                .passphrase
+                .clone()
+                .ok_or("--passphrase (or CFM_PASSPHRASE) is required to unlock the identity")?;
+            let signer = store.unlock(&info.id, &passphrase)?;
+            // The first selected page carries the visible signature box (image, name and
+            // date); any further pages get a plain image stamp before the file is signed.
+            let stamped = match &signature {
+                Some(sig) if placements.len() > 1 => {
+                    let stamped = sign::sign(&input, std::slice::from_ref(sig), &placements[1..])?;
+                    MergeInput::new(input.name.clone(), stamped)
+                }
+                _ => input.clone(),
+            };
+            let options = pades::SignOptions {
+                reason: args.reason.clone(),
+                location: args.location.clone(),
+                contact: args.contact.clone(),
+                visible: placements.first().map(|p| pades::VisibleSignature {
+                    placement: p.clone(),
+                    image_png: signature.clone(),
+                }),
+            };
+            certified = true;
+            pades::sign_pdf(&stamped, &signer, &options)?
+        }
+        (None, Some(sig)) => sign::sign(&input, std::slice::from_ref(sig), &placements)?,
+        (None, None) => return Err("give --signature and/or --identity".into()),
+    };
     std::fs::write(&args.output, &pdf)?;
     println!(
-        "Signed {} page(s) of {} into {} ({})",
+        "Signed {} page(s) of {} into {} ({}){}",
         placements.len(),
         path,
         args.output.display(),
-        human_size(pdf.len())
+        human_size(pdf.len()),
+        if certified {
+            " with a digital certificate"
+        } else {
+            ""
+        }
     );
+    Ok(())
+}
+
+fn run_verify_cli(args: VerifyArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let (path, spec) = pagespec::parse_input_arg(&args.input)?;
+    let mut input = read_input(Path::new(&path))?;
+    input.password = spec.password;
+    let store = open_store(args.data_dir)?;
+    let report = pades::verify_pdf(&input, &store.trust_anchors())?;
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if report.signatures.is_empty() {
+        println!("{path}: no digital signatures");
+    } else {
+        for sig in &report.signatures {
+            let who = sig
+                .signer
+                .as_ref()
+                .map(|c| c.common_name.clone())
+                .unwrap_or_else(|| "unknown signer".to_string());
+            let status = if sig.integrity_ok && sig.signature_ok {
+                if sig.trusted {
+                    "VALID (trusted)"
+                } else {
+                    "VALID (signer not in trust store)"
+                }
+            } else {
+                "INVALID"
+            };
+            println!(
+                "{}: {status} by {who}{}{}",
+                sig.field,
+                sig.signing_time
+                    .as_deref()
+                    .map(|t| format!(" on {t}"))
+                    .unwrap_or_default(),
+                sig.reason
+                    .as_deref()
+                    .map(|r| format!(" ({r})"))
+                    .unwrap_or_default(),
+            );
+            for p in &sig.problems {
+                println!("  - {p}");
+            }
+        }
+        if report.modified_after_last_signature {
+            println!("note: the file was changed after the last signature");
+        }
+    }
+    if report.signatures.is_empty() || !report.all_valid {
+        std::process::exit(2);
+    }
+    Ok(())
+}
+
+fn run_identity_cli(cmd: IdentityCommand) -> Result<(), Box<dyn std::error::Error>> {
+    match cmd {
+        IdentityCommand::Create {
+            name,
+            email,
+            organization,
+            country,
+            passphrase,
+            valid_days,
+            data_dir,
+        } => {
+            let store = open_store(data_dir)?;
+            let info = store.create(
+                &name,
+                email.as_deref(),
+                organization.as_deref(),
+                country.as_deref(),
+                &passphrase,
+                valid_days,
+            )?;
+            println!(
+                "Created identity {} ({}), valid until {}",
+                info.id, info.name, info.cert.not_after
+            );
+            println!("Stored in {}", store.dir().display());
+        }
+        IdentityCommand::List { json, data_dir } => {
+            let store = open_store(data_dir)?;
+            let list = store.list();
+            if json {
+                println!("{}", serde_json::to_string_pretty(&list)?);
+            } else if list.is_empty() {
+                println!("No identities in {}", store.dir().display());
+            } else {
+                for i in &list {
+                    println!(
+                        "{}  {}  {}  {}  valid until {}",
+                        i.id,
+                        i.name,
+                        i.email.as_deref().unwrap_or("-"),
+                        if i.cert.self_signed {
+                            "self-signed"
+                        } else {
+                            "CA-issued"
+                        },
+                        i.cert.not_after
+                    );
+                }
+            }
+        }
+        IdentityCommand::Import {
+            cert,
+            key,
+            key_passphrase,
+            passphrase,
+            data_dir,
+        } => {
+            let store = open_store(data_dir)?;
+            let cert_pem = std::fs::read_to_string(&cert)?;
+            let key_pem = std::fs::read_to_string(&key)?;
+            let info = store.import(&cert_pem, &key_pem, key_passphrase.as_deref(), &passphrase)?;
+            println!("Imported identity {} ({})", info.id, info.name);
+        }
+        IdentityCommand::ExportCert { id, data_dir } => {
+            let store = open_store(data_dir)?;
+            let info = find_identity(&store, &id)?;
+            print!("{}", store.cert_pem(&info.id)?);
+        }
+        IdentityCommand::Csr {
+            id,
+            passphrase,
+            data_dir,
+        } => {
+            let store = open_store(data_dir)?;
+            let info = find_identity(&store, &id)?;
+            print!("{}", store.csr_pem(&info.id, &passphrase)?);
+        }
+        IdentityCommand::Install {
+            id,
+            cert,
+            passphrase,
+            data_dir,
+        } => {
+            let store = open_store(data_dir)?;
+            let info = find_identity(&store, &id)?;
+            let cert_pem = std::fs::read_to_string(&cert)?;
+            let info = store.install_certificate(&info.id, &cert_pem, &passphrase)?;
+            println!(
+                "Installed certificate for {} issued by {}",
+                info.name, info.cert.issuer
+            );
+        }
+        IdentityCommand::Delete { id, data_dir } => {
+            let store = open_store(data_dir)?;
+            let info = find_identity(&store, &id)?;
+            store.delete(&info.id)?;
+            println!("Deleted identity {} ({})", info.id, info.name);
+        }
+    }
+    Ok(())
+}
+
+fn run_trust_cli(cmd: TrustCommand) -> Result<(), Box<dyn std::error::Error>> {
+    match cmd {
+        TrustCommand::Add { cert, data_dir } => {
+            let store = open_store(data_dir)?;
+            let pem = std::fs::read_to_string(&cert)?;
+            let info = store.add_trusted(&pem)?;
+            println!(
+                "Trusted {} ({})",
+                info.cert.common_name, info.cert.fingerprint
+            );
+        }
+        TrustCommand::List { json, data_dir } => {
+            let store = open_store(data_dir)?;
+            let list = store.trusted();
+            if json {
+                println!("{}", serde_json::to_string_pretty(&list)?);
+            } else if list.is_empty() {
+                println!("Trust store is empty ({})", store.dir().display());
+            } else {
+                for t in &list {
+                    println!(
+                        "{}  {}  valid until {}",
+                        t.cert.fingerprint, t.cert.common_name, t.cert.not_after
+                    );
+                }
+            }
+        }
+        TrustCommand::Remove {
+            fingerprint,
+            data_dir,
+        } => {
+            let store = open_store(data_dir)?;
+            let needle = fingerprint.to_lowercase().replace(':', "");
+            let matches: Vec<_> = store
+                .trusted()
+                .into_iter()
+                .filter(|t| {
+                    t.cert
+                        .fingerprint
+                        .to_lowercase()
+                        .replace(':', "")
+                        .starts_with(&needle)
+                })
+                .collect();
+            match matches.as_slice() {
+                [one] => {
+                    store.remove_trusted(&one.cert.fingerprint)?;
+                    println!(
+                        "Removed {} ({})",
+                        one.cert.common_name, one.cert.fingerprint
+                    );
+                }
+                [] => return Err(format!("no trusted certificate matches {fingerprint}").into()),
+                _ => return Err("several certificates match; give more of the fingerprint".into()),
+            }
+        }
+    }
     Ok(())
 }
 
@@ -412,6 +862,7 @@ struct AppState {
     max_concurrent: usize,
     jobs: Mutex<HashMap<String, Job>>,
     log_json: bool,
+    store: certs::Store,
 }
 
 struct Job {
@@ -497,6 +948,7 @@ async fn serve(args: ServeArgs) -> Result<(), Box<dyn std::error::Error>> {
         max_concurrent: args.max_concurrent_merges as usize,
         jobs: Mutex::new(HashMap::new()),
         log_json: args.log_format == LogFormat::Json,
+        store: open_store(args.data_dir.clone())?,
     });
 
     let body_limit = if args.max_upload_mb == 0 {
@@ -512,6 +964,18 @@ async fn serve(args: ServeArgs) -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/jobs/:id/result", get(job_result))
         .route("/api/inspect", post(inspect_handler))
         .route("/api/sign", post(sign_handler))
+        .route("/api/verify", post(verify_handler))
+        .route(
+            "/api/identities",
+            get(identities_list).post(identities_create),
+        )
+        .route("/api/identities/import", post(identities_import))
+        .route("/api/identities/:id", delete(identities_delete))
+        .route("/api/identities/:id/certificate", get(identities_cert))
+        .route("/api/identities/:id/csr", post(identities_csr))
+        .route("/api/identities/:id/install", post(identities_install))
+        .route("/api/trust", get(trust_list).post(trust_add))
+        .route("/api/trust/:fingerprint", delete(trust_remove))
         .route("/api/folder/scan", post(folder_scan))
         .layer(middleware::from_fn_with_state(
             Arc::clone(&state),
@@ -787,6 +1251,7 @@ struct ConfigResponse {
     auth_required: bool,
     authenticated: bool,
     max_concurrent_merges: usize,
+    data_dir: String,
 }
 
 async fn config(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Json<ConfigResponse> {
@@ -799,6 +1264,7 @@ async fn config(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Json<
         auth_required: state.access_token.is_some(),
         authenticated: is_authenticated(&state, &headers),
         max_concurrent_merges: state.max_concurrent,
+        data_dir: state.store.dir().display().to_string(),
     })
 }
 
@@ -822,6 +1288,16 @@ impl ApiError {
     }
     fn forbidden(message: impl Into<String>) -> Self {
         ApiError::new(StatusCode::FORBIDDEN, message, "forbidden")
+    }
+    fn from_cert(err: &certs::CertError) -> Self {
+        let code = if err.0.contains("passphrase") {
+            "passphrase"
+        } else if err.0.starts_with("no identity") {
+            "not_found"
+        } else {
+            "invalid"
+        };
+        ApiError::new(StatusCode::BAD_REQUEST, err.0.clone(), code)
     }
     fn from_merge(err: &MergeError) -> Self {
         ApiError::new(
@@ -1424,6 +1900,20 @@ struct SignManifest {
     #[serde(default)]
     placements: Vec<sign::Placement>,
     output_name: Option<String>,
+    /// When present the file is also signed with a stored identity's certificate.
+    certify: Option<CertifyRequest>,
+}
+
+#[derive(Deserialize, Default)]
+struct CertifyRequest {
+    identity: String,
+    passphrase: String,
+    reason: Option<String>,
+    location: Option<String>,
+    contact: Option<String>,
+    /// Index into `placements` of the stamp that becomes the visible signature box
+    /// (default: the first one). The other stamps stay plain images.
+    visible: Option<usize>,
 }
 
 /// POST /api/sign — multipart with the PDF (`file` or `path`), optional `password`, one or
@@ -1491,7 +1981,8 @@ async fn sign_handler(
     }
     let mut input = input.ok_or_else(|| ApiError::bad_request("No PDF was provided."))?;
     input.password = password;
-    if signatures.is_empty() {
+    let certify = manifest.certify;
+    if signatures.is_empty() && certify.is_none() {
         return Err(ApiError::bad_request("No signature image was provided."));
     }
     let output_name = sanitize_filename(
@@ -1500,6 +1991,20 @@ async fn sign_handler(
             .as_deref()
             .unwrap_or(&format!("{}-signed", input.name.trim_end_matches(".pdf"))),
     );
+    // Unlock the key before taking a merge slot so a wrong passphrase fails fast.
+    let signer = match &certify {
+        Some(c) => {
+            let info =
+                find_identity(&state.store, &c.identity).map_err(|e| ApiError::from_cert(&e))?;
+            Some(
+                state
+                    .store
+                    .unlock(&info.id, &c.passphrase)
+                    .map_err(|e| ApiError::from_cert(&e))?,
+            )
+        }
+        None => None,
+    };
     let _permit = state
         .merges
         .acquire()
@@ -1507,18 +2012,296 @@ async fn sign_handler(
         .map_err(|_| ApiError::bad_request("Server is shutting down."))?;
     let placements = manifest.placements;
     let count = placements.len();
-    let pdf = tokio::task::spawn_blocking(move || sign::sign(&input, &signatures, &placements))
-        .await
-        .map_err(|e| ApiError::bad_request(format!("Sign task failed: {e}")))?
-        .map_err(|e| ApiError::from_merge(&e))?;
+    let certified = signer.is_some();
+    let pdf = tokio::task::spawn_blocking(move || -> Result<Vec<u8>, MergeError> {
+        let (Some(signer), Some(certify)) = (signer, certify) else {
+            return sign::sign(&input, &signatures, &placements);
+        };
+        // One placement becomes the visible signature box; the rest are plain stamps
+        // applied first, so the digital signature covers them too.
+        let visible_index = certify.visible.unwrap_or(0);
+        let mut plain = placements.clone();
+        let visible = if visible_index < plain.len() {
+            Some(plain.remove(visible_index))
+        } else {
+            None
+        };
+        let stamped = if plain.is_empty() {
+            input
+        } else {
+            let bytes = sign::sign(&input, &signatures, &plain)?;
+            MergeInput::new(input.name.clone(), bytes)
+        };
+        let options = pades::SignOptions {
+            reason: certify.reason.filter(|s| !s.trim().is_empty()),
+            location: certify.location.filter(|s| !s.trim().is_empty()),
+            contact: certify.contact.filter(|s| !s.trim().is_empty()),
+            visible: visible.map(|placement| pades::VisibleSignature {
+                image_png: signatures.get(placement.image).cloned(),
+                placement,
+            }),
+        };
+        pades::sign_pdf(&stamped, &signer, &options)
+    })
+    .await
+    .map_err(|e| ApiError::bad_request(format!("Sign task failed: {e}")))?
+    .map_err(|e| ApiError::from_merge(&e))?;
     state.log(
         "sign",
         &[
             ("placements", count.to_string()),
+            ("certified", certified.to_string()),
             ("out", human_size(pdf.len())),
         ],
     );
     Ok(pdf_response(pdf, &output_name))
+}
+
+// ---------------------------------------------------------------------------
+// Verify digital signatures
+// ---------------------------------------------------------------------------
+
+/// POST /api/verify — multipart with the PDF (`file` or `path`) and optional `password`.
+/// Responds with a JSON report of every digital signature in the file.
+async fn verify_handler(
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Result<Json<pades::VerifyReport>, ApiError> {
+    let mut input: Option<MergeInput> = None;
+    let mut password: Option<String> = None;
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::bad_request(e.to_string()))?
+    {
+        let name = field.name().unwrap_or("").to_string();
+        match name.as_str() {
+            "file" => {
+                let file_name = field.file_name().unwrap_or("document.pdf").to_string();
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                input = Some(MergeInput::new(file_name, data.to_vec()));
+            }
+            "path" => {
+                let raw = field
+                    .text()
+                    .await
+                    .map_err(|e| ApiError::bad_request(e.to_string()))?;
+                let path = resolve_local_path(&state, raw.trim())?;
+                input = Some(read_input(&path).map_err(|e| ApiError::bad_request(e.to_string()))?);
+            }
+            "password" => {
+                password = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| ApiError::bad_request(e.to_string()))?,
+                )
+                .filter(|p| !p.is_empty())
+            }
+            _ => {
+                let _ = field.bytes().await;
+            }
+        }
+    }
+    let mut input = input.ok_or_else(|| ApiError::bad_request("No PDF was provided."))?;
+    input.password = password;
+    let anchors = state.store.trust_anchors();
+    let report = tokio::task::spawn_blocking(move || pades::verify_pdf(&input, &anchors))
+        .await
+        .map_err(|e| ApiError::bad_request(format!("Verify task failed: {e}")))?
+        .map_err(|e| ApiError::from_merge(&e))?;
+    state.log(
+        "verify",
+        &[
+            ("signatures", report.signatures.len().to_string()),
+            ("all_valid", report.all_valid.to_string()),
+        ],
+    );
+    Ok(Json(report))
+}
+
+// ---------------------------------------------------------------------------
+// Identities and trust store
+// ---------------------------------------------------------------------------
+
+async fn identities_list(State(state): State<Arc<AppState>>) -> Json<Vec<certs::IdentityInfo>> {
+    Json(state.store.list())
+}
+
+#[derive(Deserialize)]
+struct CreateIdentityRequest {
+    name: String,
+    email: Option<String>,
+    organization: Option<String>,
+    country: Option<String>,
+    passphrase: String,
+    valid_days: Option<u32>,
+}
+
+async fn identities_create(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<CreateIdentityRequest>,
+) -> Result<Json<certs::IdentityInfo>, ApiError> {
+    let info = state
+        .store
+        .create(
+            &req.name,
+            req.email.as_deref(),
+            req.organization.as_deref().filter(|s| !s.trim().is_empty()),
+            req.country.as_deref().filter(|s| !s.trim().is_empty()),
+            &req.passphrase,
+            req.valid_days.unwrap_or(1095).clamp(1, 36500),
+        )
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log("identity_create", &[("id", info.id.clone())]);
+    Ok(Json(info))
+}
+
+#[derive(Deserialize)]
+struct ImportIdentityRequest {
+    cert_pem: String,
+    key_pem: String,
+    key_passphrase: Option<String>,
+    passphrase: String,
+}
+
+async fn identities_import(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<ImportIdentityRequest>,
+) -> Result<Json<certs::IdentityInfo>, ApiError> {
+    let info = state
+        .store
+        .import(
+            &req.cert_pem,
+            &req.key_pem,
+            req.key_passphrase.as_deref().filter(|s| !s.is_empty()),
+            &req.passphrase,
+        )
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log("identity_import", &[("id", info.id.clone())]);
+    Ok(Json(info))
+}
+
+async fn identities_delete(
+    State(state): State<Arc<AppState>>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .store
+        .delete(&id)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log("identity_delete", &[("id", id)]);
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn identities_cert(
+    State(state): State<Arc<AppState>>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<Response, ApiError> {
+    let info = state.store.get(&id).map_err(|e| ApiError::from_cert(&e))?;
+    let pem = state
+        .store
+        .cert_pem(&id)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    let file = format!("{}.crt", sanitize_filename(&info.name));
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/x-pem-file".to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{file}\""),
+            ),
+        ],
+        pem,
+    )
+        .into_response())
+}
+
+#[derive(Deserialize)]
+struct PassphraseRequest {
+    passphrase: String,
+}
+
+async fn identities_csr(
+    State(state): State<Arc<AppState>>,
+    AxumPath(id): AxumPath<String>,
+    Json(req): Json<PassphraseRequest>,
+) -> Result<Response, ApiError> {
+    let info = state.store.get(&id).map_err(|e| ApiError::from_cert(&e))?;
+    let pem = state
+        .store
+        .csr_pem(&id, &req.passphrase)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    let file = format!("{}.csr", sanitize_filename(&info.name));
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/pkcs10".to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{file}\""),
+            ),
+        ],
+        pem,
+    )
+        .into_response())
+}
+
+#[derive(Deserialize)]
+struct InstallCertRequest {
+    cert_pem: String,
+    passphrase: String,
+}
+
+async fn identities_install(
+    State(state): State<Arc<AppState>>,
+    AxumPath(id): AxumPath<String>,
+    Json(req): Json<InstallCertRequest>,
+) -> Result<Json<certs::IdentityInfo>, ApiError> {
+    let info = state
+        .store
+        .install_certificate(&id, &req.cert_pem, &req.passphrase)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log("identity_install", &[("id", info.id.clone())]);
+    Ok(Json(info))
+}
+
+async fn trust_list(State(state): State<Arc<AppState>>) -> Json<Vec<certs::TrustedInfo>> {
+    Json(state.store.trusted())
+}
+
+#[derive(Deserialize)]
+struct TrustAddRequest {
+    cert_pem: String,
+}
+
+async fn trust_add(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<TrustAddRequest>,
+) -> Result<Json<certs::TrustedInfo>, ApiError> {
+    let info = state
+        .store
+        .add_trusted(&req.cert_pem)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log(
+        "trust_add",
+        &[("fingerprint", info.cert.fingerprint.clone())],
+    );
+    Ok(Json(info))
+}
+
+async fn trust_remove(
+    State(state): State<Arc<AppState>>,
+    AxumPath(fingerprint): AxumPath<String>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .store
+        .remove_trusted(&fingerprint)
+        .map_err(|e| ApiError::from_cert(&e))?;
+    state.log("trust_remove", &[("fingerprint", fingerprint)]);
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ---------------------------------------------------------------------------
@@ -1658,6 +2441,12 @@ mod tests {
             max_concurrent: 1,
             jobs: Mutex::new(HashMap::new()),
             log_json: false,
+            store: certs::Store::open(std::env::temp_dir().join(format!(
+                "cfm-test-{}-{}",
+                std::process::id(),
+                token.map(str::len).unwrap_or(0)
+            )))
+            .unwrap(),
         }
     }
 
