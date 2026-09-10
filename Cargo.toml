@@ -25,6 +25,18 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 rcgen = { version = "0.14", default-features = false, features = ["ring", "pem"] }
 open = "5"
 rand = "0.10"
+# Digital signatures (pure Rust, RustCrypto): certificates, CMS/PKCS#7, ECDSA P-256, RSA verification.
+cms = "0.3.0-pre.2"
+x509-cert = { version = "0.3", features = ["builder", "pem"] }
+p256 = { version = "0.14", features = ["ecdsa", "pkcs8", "pem"] }
+rsa = { version = "0.10.0-rc.18", features = ["sha2"] }
+sha2 = "0.11"
+pkcs8 = { version = "0.11", features = ["encryption", "pem", "std", "getrandom"] }
+der = { version = "0.8", features = ["pem", "std"] }
+spki = { version = "0.8", features = ["pem", "std"] }
+signature = "3.0"
+const-oid = { version = "0.10", features = ["db"] }
+rand_core = "0.10"
 
 [profile.release]
 opt-level = 3

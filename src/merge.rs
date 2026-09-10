@@ -757,7 +757,7 @@ fn write_dictionary(dict: &Dictionary, out: &mut Vec<u8>) {
 }
 
 /// Walk up the `Parent` chain and gather attributes the page inherits but doesn't define itself.
-fn collect_inherited(doc: &Document, page_id: ObjectId) -> Vec<(Vec<u8>, Object)> {
+pub(crate) fn collect_inherited(doc: &Document, page_id: ObjectId) -> Vec<(Vec<u8>, Object)> {
     const INHERITABLE: [&[u8]; 4] = [b"Resources", b"MediaBox", b"CropBox", b"Rotate"];
     let mut found: Vec<(Vec<u8>, Object)> = Vec::new();
     let Ok(page) = doc.get_dictionary(page_id) else {
