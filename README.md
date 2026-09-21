@@ -1,4 +1,10 @@
-# Confidential File Merger
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.png">
+    <img src="docs/banner-light.png" width="840"
+         alt="Confidential File Merger. Merge, sign and verify PDFs on your own machine. Nothing is ever uploaded to anyone.">
+  </picture>
+</p>
 
 > **Do not upload your bank statements, contracts, IDs, tax returns, or medical records
 > to random "free PDF merge" websites.** You have no idea who runs them, where your files
@@ -411,6 +417,10 @@ cargo test                       # unit tests, including encrypted-PDF regressio
 cargo clippy --all-targets -- -D warnings
 cargo run -- --port 8080 --allow-local-folders --folder-root .
 ```
+
+The README banner is generated, not hand-drawn: `docs/banner.html` is the source and
+`node docs/render-banner.js` re-renders `docs/banner-light.png` and `docs/banner-dark.png`
+from it in both colour schemes. Edit the HTML, re-render, commit both images.
 
 CI runs formatting, clippy, tests and a release build on every push. Test fixtures under
 `tests/fixtures/` are tiny PDFs with AES-256 encryption written by a third-party tool, used
