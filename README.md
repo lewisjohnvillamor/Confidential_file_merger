@@ -59,6 +59,9 @@ to anyone, nothing phones home, nothing is logged about your documents.
   merge again. Feed the result back into the list and keep going.
 - **Folders.** Drop a folder onto the page, pick one with the folder button, or (opt-in)
   point the server at a folder on its own disk. Files sort naturally (`scan1, scan2, scan10`).
+- **Paste straight in.** Copy a screenshot or a file and press Ctrl+V (⌘V on a Mac). It
+  lands wherever you are: in the merge queue, as your signature on the Sign tab, or
+  checked on the spot on the Verify tab.
 - **Comfortable.** Live progress for big merges, duplicate detection, your list survives
   a page refresh (kept in the browser only, passwords excluded), full keyboard control,
   English and Spanish, light and dark themes.
@@ -106,8 +109,9 @@ Confidential File Merger v0.1.0
 
 ## Using the GUI
 
-1. Drop files or folders onto the page, or use **Add files** / **Add a folder**. PDFs and
-   TIFFs show a rendered preview and their page count. A locked PDF shows a password box.
+1. Drop files or folders onto the page, use **Add files** / **Add a folder**, or paste an
+   image or PDF from the clipboard with Ctrl+V. PDFs and TIFFs show a rendered preview and
+   their page count. A locked PDF shows a password box.
 2. Arrange the list: drag rows, use the arrow buttons, **Sort A→Z**, or **Reverse**.
    The list order is the page order.
 3. Per file: **rotate** (↻) the whole file, or open the **page picker** (grid icon) to
@@ -122,7 +126,8 @@ Confidential File Merger v0.1.0
    **Add result to list** to chain merges.
 
 Keyboard: focus a row and use **Alt+↑/↓** to move it, **R** to rotate, **P** for the page
-picker, **Delete** to remove, **↑/↓** to move between rows. Screen readers get the same
+picker, **Delete** to remove, **↑/↓** to move between rows. **Ctrl+V** anywhere outside a
+text box pastes a copied image or PDF into the tab you are on. Screen readers get the same
 announcements.
 
 ### Signing
@@ -133,7 +138,7 @@ Open the **Sign** tab.
    rendered so you can see where you are signing.
 2. **Signature.** *Draw* on the pad (pen colour and width are adjustable, with undo),
    *Upload* a photo or scan (turn *Remove white background* on and tune the threshold
-   until only the ink remains), or *Type* your name in a script face. Press **Save** to keep
+   until only the ink remains), paste one with Ctrl+V, or *Type* your name in a script face. Press **Save** to keep
    a signature in this browser for next time; saved signatures never leave the device.
 3. **Place.** Pick the page from the strip, press **Place on page**, then drag the
    signature where it belongs. The corner handle resizes it (aspect ratio is kept), the top

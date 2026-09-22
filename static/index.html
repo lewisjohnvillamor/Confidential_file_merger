@@ -47,6 +47,7 @@
   .drop p { margin: 0 0 18px; color: var(--ink-2); }
   .drop .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .drop .hint { margin: 16px 0 0; font-size: 13px; color: var(--ink-3); }
+  .drop .hint.paste { margin-top: 14px; color: var(--ink-2); }
 
   .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); cursor: pointer; font-weight: 600; text-decoration: none; line-height: 1.2; transition: background .12s, border-color .12s, opacity .12s; }
   .btn:hover { border-color: var(--ink-3); }
@@ -315,6 +316,7 @@
         <span data-i18n="add_folder">Add a folder</span>
       </button>
     </div>
+    <p class="hint paste" data-i18n="drop_paste">Or paste an image straight from your clipboard.</p>
     <p class="hint" data-i18n="drop_hint">Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.</p>
     <input type="file" id="fileInput" class="sr" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tif,.tiff,.svg,.svgz,application/pdf,image/*">
     <input type="file" id="folderInput" class="sr" multiple webkitdirectory directory>
@@ -693,6 +695,9 @@
       badge_title: 'The browser is instructed (Content-Security-Policy) to refuse any connection except to this local server.',
       drop_title: 'Drop PDFs, images, or whole folders here',
       drop_formats: 'PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — any amount, any order.',
+      drop_paste: 'Or paste an image straight from your clipboard.',
+      paste_sig: 'Pasted image used as your signature', paste_doc: (name) => `Pasted ${name}, ready to sign`,
+      paste_need_pdf: 'Paste a PDF here to check its signatures.',
       add_files: 'Add files', add_folder: 'Add a folder',
       drop_hint: 'Files are read into memory, merged, and handed back to you. No uploads to any cloud, no analytics, no telemetry.',
       merge_order: 'Merge order', sort_az: 'Sort A→Z', sort_az_title: 'Sort by name (natural order)', reverse: 'Reverse', clear: 'Clear',
@@ -783,6 +788,9 @@
       badge_title: 'El navegador tiene instrucciones (Content-Security-Policy) de rechazar cualquier conexión que no sea a este servidor local.',
       drop_title: 'Suelta aquí PDF, imágenes o carpetas enteras',
       drop_formats: 'PDF · PNG · JPEG · GIF · BMP · WebP · TIFF · SVG — cualquier cantidad, cualquier orden.',
+      drop_paste: 'O pega una imagen directamente desde el portapapeles.',
+      paste_sig: 'Imagen pegada usada como tu firma', paste_doc: (name) => `${name} pegado, listo para firmar`,
+      paste_need_pdf: 'Pega aquí un PDF para comprobar sus firmas.',
       add_files: 'Añadir archivos', add_folder: 'Añadir carpeta',
       drop_hint: 'Los archivos se leen en memoria, se unen y se te devuelven. Sin subidas a ninguna nube, sin analítica, sin telemetría.',
       merge_order: 'Orden de unión', sort_az: 'Ordenar A→Z', sort_az_title: 'Ordenar por nombre (orden natural)', reverse: 'Invertir', clear: 'Vaciar',
@@ -1556,7 +1564,14 @@
   // Upload: composite onto canvas, optionally turn light background transparent.
   let uploadImg = null;
   sg.sigPick.addEventListener('click', () => sg.sigFile.click());
-  sg.sigFile.addEventListener('change', () => { const f = sg.sigFile.files[0]; sg.sigFile.value = ''; if (!f) return; const img = new Image(); img.onload = () => { uploadImg = img; uploadToSignature(); }; img.onerror = () => toast(t('skipped_n', 1, f.name)); img.src = URL.createObjectURL(f); });
+  sg.sigFile.addEventListener('change', () => { const f = sg.sigFile.files[0]; sg.sigFile.value = ''; signatureFromFile(f); });
+  function signatureFromFile(f) {
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => { uploadImg = img; uploadToSignature(); };
+    img.onerror = () => toast(t('skipped_n', 1, f.name));
+    img.src = URL.createObjectURL(f);
+  }
   sg.removeBg.addEventListener('change', uploadToSignature); sg.bgThreshold.addEventListener('input', uploadToSignature);
   function uploadToSignature() {
     if (!uploadImg) return;
@@ -1897,6 +1912,45 @@
       try { await trustPem(r.signatures[i].signer_certificate_pem); if (vfCurrent) verifyFile(vfCurrent, sg.vfPass.value); } catch (err) { if (err.code !== 'unauthorized') toast(err.message); }
     }));
   }
+  // ----- paste from the clipboard -----
+  // A screenshot or a copied file is a document too, so Ctrl+V (Cmd+V) drops it wherever
+  // you are: into the merge queue, onto the signature, or into the signature checker.
+  function pastedName(file, i) {
+    const type = (file.type || '').toLowerCase();
+    const guess = type === 'application/pdf' ? 'pdf' : (type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+    const base = (file.name || '').replace(/\.[^.]*$/, '');
+    // Clipboards hand out placeholder names like "image.png"; a timestamp is more use.
+    if (base && !/^(image|screenshot|untitled)$/i.test(base)) return file.name;
+    const d = new Date(), pad = (n) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return `pasted-${stamp}${i ? `-${i + 1}` : ''}.${guess}`;
+  }
+  document.addEventListener('paste', (e) => {
+    // Never steal a paste meant for a field: passwords, file names, PEM boxes.
+    const el = e.target;
+    if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+    if (!els.loginOverlay.hidden || !$('picker').hidden || !sg.idOverlay.hidden || !sg.askOverlay.hidden) return;
+    const pasted = [...((e.clipboardData && e.clipboardData.files) || [])]
+      .filter((f) => f.type === 'application/pdf' || f.type.startsWith('image/'));
+    if (!pasted.length) return;
+    e.preventDefault();
+    const files = pasted.map((f, i) => new File([f], pastedName(f, i), { type: f.type, lastModified: Date.now() }));
+    const pdfs = files.filter((f) => f.type === 'application/pdf');
+    if (!sg.tabSign.hidden) {
+      // On the Sign tab: a document to sign, or the signature itself.
+      if (pdfs.length) { loadSignDoc(pdfs[0]); toast(t('paste_doc', pdfs[0].name)); }
+      else { document.querySelector('.subtabs [data-src=upload]').click(); signatureFromFile(files[0]); toast(t('paste_sig')); }
+      return;
+    }
+    if (!sg.tabVerify.hidden) {
+      // On the Verify tab: only a PDF can carry a signature.
+      if (pdfs.length) verifyFile(pdfs[0]);
+      else toast(t('paste_need_pdf'));
+      return;
+    }
+    addFiles(files, { sort: false });
+  });
+
   try { const tab = localStorage.getItem('cfm_tab'); if (tab === 'sign' || tab === 'verify') showTab(tab); } catch (_) {}
 
   // ---------- startup ----------

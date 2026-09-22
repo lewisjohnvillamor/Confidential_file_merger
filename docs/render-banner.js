@@ -2,8 +2,10 @@
 //
 // The banner is laid out at 1280 CSS px and the README shows it 840 px wide, so it is
 // rasterised at 1.3125x: exactly 2x the displayed size, which is what a HiDPI screen
-// needs and no more. docs/shoot-app.js captures the app shots it frames; run that first. omitBackground keeps the rounded corners transparent, so the card
+// needs and no more. omitBackground keeps the rounded corners transparent, so the card
 // sits on GitHub's light and dark page backgrounds alike.
+//
+// docs/shoot-app.js captures the app shots this frames; run that first.
 // Needs Playwright's Chromium: npx playwright install chromium (once), then:
 //   node docs/render-banner.js
 const path = require('path');
