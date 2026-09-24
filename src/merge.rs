@@ -72,6 +72,11 @@ pub struct MergeOptions {
     pub merge_forms: bool,
     /// De-duplicate identical streams and compress uncompressed ones.
     pub optimize: bool,
+    /// Remove metadata that rides along hidden in the inputs: camera EXIF (including the
+    /// GPS position) inside JPEGs, XMP packets, application data and edit timestamps.
+    pub strip_metadata: bool,
+    /// Encrypt the output with AES-256 so it opens only with this password.
+    pub output_password: Option<String>,
     pub metadata: Metadata,
 }
 
@@ -85,6 +90,8 @@ impl Default for MergeOptions {
             keep_outlines: true,
             merge_forms: true,
             optimize: true,
+            strip_metadata: true,
+            output_password: None,
             metadata: Metadata::default(),
         }
     }
@@ -460,6 +467,10 @@ pub fn merge_with_progress(
     out.trailer.set("Root", catalog_id);
     out.trailer.set("Info", info_id);
 
+    if options.strip_metadata {
+        scrub_hidden_metadata(&mut out);
+    }
+
     // Drop everything that is no longer reachable from the new catalog
     // (old catalogs' name trees, metadata, structure trees, ...).
     out.prune_objects();
@@ -473,9 +484,54 @@ pub fn merge_with_progress(
 
     report(inputs.len() + 2, "Writing".to_string());
     out.renumber_objects();
+    if let Some(password) = options.output_password.as_deref().filter(|p| !p.is_empty()) {
+        protect_with_password(&mut out, password)?;
+    }
     let mut buffer = Vec::new();
     out.save_to(&mut buffer).map_err(MergeError::Write)?;
     Ok(buffer)
+}
+
+/// Encrypt the finished document with AES-256 (the PDF 2.0 standard security handler,
+/// revision 6), so that it opens only with `password`.
+///
+/// The same password is also the owner password and every permission is granted: this
+/// protects the file in transit and at rest, which is what people merging bank statements
+/// need. It is deliberately not a copy-protection scheme, which PDF cannot enforce anyway.
+fn protect_with_password(doc: &mut Document, password: &str) -> Result<(), MergeError> {
+    use lopdf::encryption::crypt_filters::{Aes256CryptFilter, CryptFilter};
+    use lopdf::{EncryptionState, EncryptionVersion, Permissions};
+    use std::collections::BTreeMap;
+    use std::sync::Arc;
+
+    let failed = |e: lopdf::Error| {
+        MergeError::Write(std::io::Error::other(format!("encryption failed: {e}")))
+    };
+    // An encrypted file must carry a file identifier; a random one says nothing about
+    // where or when the file was made.
+    let id: [u8; 16] = rand::random();
+    doc.trailer.set(
+        "ID",
+        vec![
+            Object::String(id.to_vec(), lopdf::StringFormat::Hexadecimal),
+            Object::String(id.to_vec(), lopdf::StringFormat::Hexadecimal),
+        ],
+    );
+    let mut file_key = [0u8; 32];
+    rand::fill(&mut file_key);
+    let filter: Arc<dyn CryptFilter> = Arc::new(Aes256CryptFilter);
+    let state = EncryptionState::try_from(EncryptionVersion::V5 {
+        encrypt_metadata: true,
+        crypt_filters: BTreeMap::from([(b"StdCF".to_vec(), filter)]),
+        file_encryption_key: &file_key,
+        stream_filter: b"StdCF".to_vec(),
+        string_filter: b"StdCF".to_vec(),
+        owner_password: password,
+        user_password: password,
+        permissions: Permissions::all(),
+    })
+    .map_err(failed)?;
+    doc.encrypt(&state).map_err(failed)
 }
 
 /// What one input contributed, needed for the outline and form passes.
@@ -811,8 +867,12 @@ fn image_document(input: &MergeInput, options: &MergeOptions) -> Result<Document
     let mut kids = Vec::new();
     for page in &pages {
         kids.push(Object::Reference(add_image_page(
-            &mut doc, pages_id, page, options,
-        )));
+            &mut doc,
+            pages_id,
+            page,
+            options,
+            &input.name,
+        )?));
     }
     doc.objects.insert(
         pages_id,
@@ -832,7 +892,8 @@ fn add_image_page(
     pages_id: ObjectId,
     page: &ImagePage,
     options: &MergeOptions,
-) -> ObjectId {
+    name: &str,
+) -> Result<ObjectId, MergeError> {
     let mut dict = dictionary! {
         "Type" => "XObject",
         "Subtype" => "Image",
@@ -841,13 +902,35 @@ fn add_image_page(
         "ColorSpace" => page.color_space,
         "BitsPerComponent" => 8,
     };
-    let stream = match &page.pixels {
-        Pixels::Jpeg(bytes) => {
+    let jpeg = match &page.pixels {
+        Pixels::Jpeg(bytes) if options.strip_metadata => images::strip_jpeg_metadata(bytes),
+        Pixels::Jpeg(bytes) => Some(bytes.clone()),
+        Pixels::Raw(_) => None,
+    };
+    let stream = match (&page.pixels, jpeg) {
+        (_, Some(bytes)) => {
             dict.set("Filter", "DCTDecode");
-            Stream::new(dict, bytes.clone())
+            Stream::new(dict, bytes)
         }
-        Pixels::Raw(samples) => {
+        (Pixels::Raw(samples), None) => {
             let mut s = Stream::new(dict, samples.clone());
+            let _ = s.compress();
+            s
+        }
+        // A JPEG too unusual to strip safely: embed its decoded pixels instead, so the
+        // original bytes (and whatever they carry) never reach the output.
+        (Pixels::Jpeg(_), None) => {
+            let decoded = images::to_dynamic(page).map_err(|e| MergeError::Image {
+                name: name.to_string(),
+                message: e.0,
+            })?;
+            let raw = images::from_dynamic(&decoded, page.dpi);
+            dict.set("ColorSpace", raw.color_space);
+            let samples = match raw.pixels {
+                Pixels::Raw(samples) => samples,
+                Pixels::Jpeg(_) => unreachable!("from_dynamic always yields raw samples"),
+            };
+            let mut s = Stream::new(dict, samples);
             let _ = s.compress();
             s
         }
@@ -862,7 +945,7 @@ fn add_image_page(
     );
     let image_id = doc.add_object(stream);
     let content_id = doc.add_object(Stream::new(dictionary! {}, content.into_bytes()));
-    doc.add_object(dictionary! {
+    Ok(doc.add_object(dictionary! {
         "Type" => "Page",
         "Parent" => pages_id,
         "MediaBox" => vec![0.into(), 0.into(), layout.page_w.into(), layout.page_h.into()],
@@ -870,7 +953,43 @@ fn add_image_page(
         "Resources" => dictionary! {
             "XObject" => dictionary! { "Im0" => image_id },
         },
-    })
+    }))
+}
+
+/// Remove metadata that travels hidden inside the merged document: XMP packets and
+/// application data attached to pages, images and forms, edit timestamps, and camera
+/// metadata inside embedded JPEG images (a phone-scanned PDF often carries the photo's
+/// GPS position). Nothing drawn on any page changes.
+fn scrub_hidden_metadata(doc: &mut Document) {
+    for object in doc.objects.values_mut() {
+        let dict = match object {
+            Object::Dictionary(dict) => dict,
+            Object::Stream(stream) => {
+                if is_plain_jpeg(&stream.dict) {
+                    // Unusual JPEGs are left as they are rather than risk a broken page.
+                    if let Some(clean) = images::strip_jpeg_metadata(&stream.content) {
+                        stream.set_content(clean);
+                    }
+                }
+                &mut stream.dict
+            }
+            _ => continue,
+        };
+        for key in [&b"Metadata"[..], b"PieceInfo", b"LastModified"] {
+            dict.remove(key);
+        }
+    }
+}
+
+/// A stream whose only filter is `DCTDecode`, i.e. whose bytes are a JPEG file.
+fn is_plain_jpeg(dict: &lopdf::Dictionary) -> bool {
+    match dict.get(b"Filter") {
+        Ok(Object::Name(name)) => name == b"DCTDecode",
+        Ok(Object::Array(filters)) => {
+            matches!(filters.as_slice(), [Object::Name(name)] if name == b"DCTDecode")
+        }
+        _ => false,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -1677,6 +1796,175 @@ pub(crate) mod tests {
 
     fn opts() -> MergeOptions {
         MergeOptions::default()
+    }
+
+    /// Every place a secret was planted, searched in the output with all streams
+    /// decompressed, so a compressed leftover cannot hide from the check.
+    fn planted_secrets_in(pdf: &[u8]) -> Vec<String> {
+        let mut doc = Document::load_mem(pdf).unwrap();
+        doc.decompress();
+        let mut bytes = Vec::new();
+        doc.save_to(&mut bytes).unwrap();
+        let secrets: [&[u8]; 5] = [
+            b"PAGEXMPSECRET",
+            b"PIECEINFOSECRET",
+            b"LastModified",
+            b"FixtureArtist",
+            b"FixtureComment",
+        ];
+        secrets
+            .iter()
+            .filter(|s| bytes.windows(s.len()).any(|w| w == **s))
+            .map(|s| String::from_utf8_lossy(s).into_owned())
+            .collect()
+    }
+
+    /// A one-page PDF shaped like a phone scanner's output: the page carries an XMP
+    /// packet, application data and an edit time, and its image is a JPEG straight
+    /// from the camera, EXIF and GPS position included.
+    fn scanner_style_pdf(photo: &[u8]) -> Vec<u8> {
+        let mut doc = Document::with_version("1.5");
+        let pages_id = doc.new_object_id();
+        let xmp = doc.add_object(Stream::new(
+            dictionary! { "Type" => "Metadata", "Subtype" => "XML" },
+            b"<x:xmpmeta>PAGEXMPSECRET</x:xmpmeta>".to_vec(),
+        ));
+        let image = doc.add_object(Stream::new(
+            dictionary! {
+                "Type" => "XObject", "Subtype" => "Image", "Width" => 48, "Height" => 32,
+                "ColorSpace" => "DeviceRGB", "BitsPerComponent" => 8, "Filter" => "DCTDecode",
+            },
+            photo.to_vec(),
+        ));
+        let content = doc.add_object(Stream::new(
+            dictionary! {},
+            b"q 48 0 0 32 0 0 cm /Im0 Do Q".to_vec(),
+        ));
+        let page = doc.add_object(dictionary! {
+            "Type" => "Page",
+            "Parent" => pages_id,
+            "MediaBox" => vec![0.into(), 0.into(), 48.into(), 32.into()],
+            "Contents" => content,
+            "Resources" => dictionary! { "XObject" => dictionary! { "Im0" => image } },
+            "Metadata" => xmp,
+            "PieceInfo" => dictionary! {
+                "Scanner" => dictionary! { "Private" => Object::string_literal("PIECEINFOSECRET") },
+            },
+            "LastModified" => Object::string_literal("D:20260101000000Z"),
+        });
+        doc.objects.insert(
+            pages_id,
+            Object::Dictionary(
+                dictionary! { "Type" => "Pages", "Kids" => vec![page.into()], "Count" => 1 },
+            ),
+        );
+        let catalog = doc.add_object(dictionary! { "Type" => "Catalog", "Pages" => pages_id });
+        doc.trailer.set("Root", catalog);
+        let mut out = Vec::new();
+        doc.save_to(&mut out).unwrap();
+        out
+    }
+
+    #[test]
+    fn output_password_encrypts_with_aes256_and_round_trips() {
+        let inputs = [
+            input("a.pdf", sample_pdf(2, "Statement")),
+            input("b.png", sample_png(40, 30)),
+        ];
+        // A non-ASCII password exercises the SASLprep step revision 6 requires.
+        let password = "Café-løcked 42";
+        // Uncompressed, so the page text would sit in the file in the clear if the
+        // encryption did not cover it.
+        let uncompressed = MergeOptions {
+            optimize: false,
+            ..opts()
+        };
+        let plain = merge(&inputs, &uncompressed).unwrap();
+        assert!(String::from_utf8_lossy(&plain).contains("Statement"));
+        assert!(!String::from_utf8_lossy(&plain).contains("/Encrypt"));
+        let pdf = merge(
+            &inputs,
+            &MergeOptions {
+                output_password: Some(password.to_string()),
+                ..uncompressed
+            },
+        )
+        .unwrap();
+
+        // AES-256 (V5, revision 6), and nothing readable in the clear.
+        let text = String::from_utf8_lossy(&pdf).into_owned();
+        assert!(text.contains("/Encrypt"));
+        assert!(text.contains("/AESV3"));
+        assert!(text.contains("/R 6"));
+        assert!(!text.contains("Statement"));
+
+        // The app's own loader: refused without the password, refused with a wrong one,
+        // opened with the right one, with every page intact.
+        let mut reopen = MergeInput::new("out.pdf", pdf.clone());
+        assert!(matches!(
+            load_pdf(&reopen),
+            Err(MergeError::Encrypted { .. })
+        ));
+        reopen.password = Some("wrong".into());
+        assert!(matches!(
+            load_pdf(&reopen),
+            Err(MergeError::WrongPassword { .. })
+        ));
+        reopen.password = Some(password.to_string());
+        let (doc, was_encrypted) = load_pdf(&reopen).unwrap();
+        assert!(was_encrypted);
+        assert_eq!(doc.get_pages().len(), 3);
+        let first = *doc.get_pages().get(&1).unwrap();
+        let content = String::from_utf8_lossy(&doc.get_page_content(first)).into_owned();
+        assert!(content.contains("Statement"), "{content}");
+    }
+
+    #[test]
+    fn hidden_metadata_is_stripped_unless_asked_to_keep() {
+        let photo = include_bytes!("../tests/fixtures/progressive_rst.jpg");
+        let inputs = [
+            input("scan.pdf", scanner_style_pdf(photo)),
+            input("photo.jpg", photo.to_vec()),
+        ];
+
+        let clean = merge(&inputs, &opts()).unwrap();
+        assert_eq!(planted_secrets_in(&clean), Vec::<String>::new());
+        // Nothing visible was lost: both pages are there and both photos still decode
+        // to the same pixels as the original.
+        let doc = Document::load_mem(&clean).unwrap();
+        assert_eq!(doc.get_pages().len(), 2);
+        let original = image::load_from_memory(photo).unwrap().to_rgb8();
+        let jpegs: Vec<_> = doc
+            .objects
+            .values()
+            .filter_map(|o| o.as_stream().ok())
+            .filter(|s| is_plain_jpeg(&s.dict))
+            .collect();
+        assert!(!jpegs.is_empty());
+        for stream in jpegs {
+            let decoded = image::load_from_memory(&stream.content).unwrap().to_rgb8();
+            assert_eq!(decoded.as_raw(), original.as_raw());
+        }
+
+        // The switch really is what removes them: kept on request.
+        let kept = merge(
+            &inputs,
+            &MergeOptions {
+                strip_metadata: false,
+                ..opts()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            planted_secrets_in(&kept),
+            [
+                "PAGEXMPSECRET",
+                "PIECEINFOSECRET",
+                "LastModified",
+                "FixtureArtist",
+                "FixtureComment"
+            ]
+        );
     }
 
     #[test]

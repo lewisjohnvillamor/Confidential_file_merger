@@ -10,6 +10,7 @@
   :root {
     --bg: #f4f2ec; --panel: #fffdf8; --panel-2: #f7f4ed; --ink: #1d1c19; --ink-2: #5b5852; --ink-3: #8c877d;
     --line: #e3ded2; --line-2: #cfc8b8; --accent: #1f6f5f; --accent-ink: #ffffff; --accent-soft: #e2f0eb;
+    --toast-action: #7fd6bf;
     --danger: #a33a2a; --danger-soft: #f8e6e2; --ok: #2f7a4d; --warn: #9a6b12; --warn-soft: #fbf0d6;
     --shadow: 0 1px 2px rgba(30, 25, 10, .06), 0 8px 24px -12px rgba(30, 25, 10, .18); --radius: 14px;
     --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -19,6 +20,7 @@
     :root {
       --bg: #17181a; --panel: #1f2124; --panel-2: #26292d; --ink: #ecebe6; --ink-2: #b4b1a9; --ink-3: #7f7c74;
       --line: #2f3236; --line-2: #45494f; --accent: #4fb39a; --accent-ink: #0d1a16; --accent-soft: #1d3530;
+      --toast-action: #1f6f5f;
       --danger: #e07a68; --danger-soft: #3a2320; --ok: #6cc08d; --warn: #e0b45c; --warn-soft: #3a2f16;
       --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.8);
     }
@@ -99,7 +101,7 @@
   .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 18px; padding: 16px 18px; border-top: 1px solid var(--line); background: var(--panel-2); }
   .settings.last { border-radius: 0 0 var(--radius) var(--radius); }
   .field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
-  .field select, .field input[type=text], .field input[type=number] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
+  .field select, .field input[type=text], .field input[type=number], .field input[type=password] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; }
   .field .help { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
   .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--panel-2); font-size: 14px; color: var(--ink-2); }
   .checks label { display: inline-flex; gap: 6px; align-items: center; }
@@ -215,6 +217,9 @@
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; pointer-events: none; transition: .2s; max-width: 90vw; z-index: 50; }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.action { pointer-events: auto; display: flex; align-items: center; gap: 14px; padding-right: 8px; }
+  .toast-btn { background: none; border: 0; color: var(--toast-action); font: inherit; font-weight: 700; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .toast-btn:hover, .toast-btn:focus-visible { background: color-mix(in srgb, var(--toast-action) 18%, transparent); outline: none; }
 
   /* Modal (page picker, login) */
   .overlay { position: fixed; inset: 0; background: rgba(10, 10, 8, .55); display: grid; place-items: center; z-index: 40; padding: 20px; }
@@ -353,6 +358,11 @@
         <input type="text" id="outName" value="merged.pdf" spellcheck="false">
         <div class="help" data-i18n="out_name_help">Saved through your browser's download.</div>
       </div>
+      <div class="field">
+        <label for="outPass" data-i18n="out_pass">Password to open</label>
+        <input type="password" id="outPass" autocomplete="new-password" spellcheck="false" data-i18n-placeholder="out_pass_ph" placeholder="Optional">
+        <div class="help" data-i18n="out_pass_help">AES-256. Needed to open the merged PDF. Never saved.</div>
+      </div>
     </div>
     <details class="more" id="propsDetails">
       <summary data-i18n="doc_props">Document properties</summary>
@@ -370,6 +380,7 @@
         <label><input type="checkbox" id="optOutlines" checked> <span data-i18n="opt_outlines">Keep source outlines</span></label>
         <label><input type="checkbox" id="optForms" checked> <span data-i18n="opt_forms">Merge form fields</span></label>
         <label><input type="checkbox" id="optOptimize" checked> <span data-i18n="opt_optimize">De-duplicate and compress</span></label>
+        <label><input type="checkbox" id="optStrip" checked> <span data-i18n="opt_strip">Remove hidden metadata (photo location, camera, edit history)</span></label>
         <label><input type="checkbox" id="optDpi" checked> <span data-i18n="opt_dpi">Use image DPI for page size</span></label>
       </div>
     </details>
@@ -706,9 +717,12 @@
       page_size_help: 'Only affects images. PDF pages keep their original size.',
       margin: 'Image margin (pt)', margin_help: 'Used with A4 / Letter. 72 pt = 1 inch.',
       out_name: 'Output file name', out_name_help: "Saved through your browser's download.",
+      out_pass: 'Password to open', out_pass_ph: 'Optional', out_pass_help: 'AES-256. Needed to open the merged PDF. Never saved.',
+      done_protected: 'Password-protected (AES-256)',
       doc_props: 'Document properties', meta_title: 'Title', meta_author: 'Author', meta_subject: 'Subject', meta_keywords: 'Keywords',
       advanced: 'Advanced', opt_bookmarks: 'Bookmark per file', opt_outlines: 'Keep source outlines', opt_forms: 'Merge form fields',
       opt_optimize: 'De-duplicate and compress', opt_dpi: 'Use image DPI for page size',
+      opt_strip: 'Remove hidden metadata (photo location, camera, edit history)',
       merge_btn: 'Merge to PDF', download_again: 'Download again', requeue: 'Add result to list',
       requeue_title: 'Put the merged PDF at the end of the list so you can keep merging',
       folder_title: "Merge a folder from this server's disk", folder_recursive: 'include sub-folders', folder_scan: 'Scan & add',
@@ -725,6 +739,8 @@
       login_placeholder: 'Access token', login_btn: 'Sign in',
       // dynamic
       files_n: (n) => `${n} file${n === 1 ? '' : 's'}`, pages_n: (n) => `${n} page${n === 1 ? '' : 's'}`,
+      pages_plus: (n) => `${n}+ pages`, undo: 'Undo',
+      cleared_n: (n) => `Cleared ${n} file${n === 1 ? '' : 's'}`, restored_n: (n) => `Restored ${n} file${n === 1 ? '' : 's'}`,
       pages_of: (sel, total) => `pages ${sel} of ${total}`, added_n: (n) => `Added ${n} file${n === 1 ? '' : 's'}`,
       skipped_n: (n, names) => `Skipped ${n} unsupported file${n === 1 ? '' : 's'} (${names})`,
       dup_n: (n) => `${n} file${n === 1 ? ' is' : 's are'} already in the list`,
@@ -799,9 +815,12 @@
       page_size_help: 'Solo afecta a imágenes. Las páginas PDF conservan su tamaño.',
       margin: 'Margen de imagen (pt)', margin_help: 'Con A4 / Carta. 72 pt = 1 pulgada.',
       out_name: 'Nombre del archivo', out_name_help: 'Se guarda mediante la descarga del navegador.',
+      out_pass: 'Contraseña para abrir', out_pass_ph: 'Opcional', out_pass_help: 'AES-256. Necesaria para abrir el PDF unido. Nunca se guarda.',
+      done_protected: 'Protegido con contraseña (AES-256)',
       doc_props: 'Propiedades del documento', meta_title: 'Título', meta_author: 'Autor', meta_subject: 'Asunto', meta_keywords: 'Palabras clave',
       advanced: 'Avanzado', opt_bookmarks: 'Marcador por archivo', opt_outlines: 'Conservar índices de origen', opt_forms: 'Unir campos de formulario',
       opt_optimize: 'Deduplicar y comprimir', opt_dpi: 'Usar DPI de la imagen para el tamaño',
+      opt_strip: 'Quitar metadatos ocultos (ubicación de la foto, cámara, historial de edición)',
       merge_btn: 'Unir en PDF', download_again: 'Descargar de nuevo', requeue: 'Añadir resultado a la lista',
       requeue_title: 'Pone el PDF resultante al final de la lista para seguir uniendo',
       folder_title: 'Unir una carpeta del disco de este servidor', folder_recursive: 'incluir subcarpetas', folder_scan: 'Explorar y añadir',
@@ -817,6 +836,8 @@
       login_title: 'Se requiere token de acceso', login_text: 'Este servidor se inició con un token de acceso. Introdúcelo una vez; se guarda en una cookie solo en este navegador.',
       login_placeholder: 'Token de acceso', login_btn: 'Entrar',
       files_n: (n) => `${n} archivo${n === 1 ? '' : 's'}`, pages_n: (n) => `${n} página${n === 1 ? '' : 's'}`,
+      pages_plus: (n) => `${n}+ páginas`, undo: 'Deshacer',
+      cleared_n: (n) => `${n} archivo${n === 1 ? '' : 's'} quitado${n === 1 ? '' : 's'}`, restored_n: (n) => `${n} archivo${n === 1 ? '' : 's'} restaurado${n === 1 ? '' : 's'}`,
       pages_of: (sel, total) => `páginas ${sel} de ${total}`, added_n: (n) => `${n} archivo${n === 1 ? '' : 's'} añadido${n === 1 ? '' : 's'}`,
       skipped_n: (n, names) => `${n} archivo${n === 1 ? '' : 's'} no compatible${n === 1 ? '' : 's'} omitido${n === 1 ? '' : 's'} (${names})`,
       dup_n: (n) => `${n} archivo${n === 1 ? ' ya está' : 's ya están'} en la lista`,
@@ -895,9 +916,9 @@
   let busy = false;
 
   const els = {};
-  ['drop','files','empty','queueMeta','merge','progress','status','error','result','resultTitle','resultInfo','download','fileInput','folderInput',
+  ['drop','files','empty','queueMeta','merge','progress','status','error','result','resultTitle','resultInfo','download','fileInput','folderInput','outPass',
    'pageSize','margin','outName','folderPanel','folderPath','folderRecursive','folderScan','folderRootNote','toast','requeue','version','announce',
-   'metaTitle','metaAuthor','metaSubject','metaKeywords','optBookmarks','optOutlines','optForms','optOptimize','optDpi',
+   'metaTitle','metaAuthor','metaSubject','metaKeywords','optBookmarks','optOutlines','optForms','optOptimize','optDpi','optStrip',
    'picker','pickerTitle','pickerClose','pickerRange','pickerGrid','pickerLoading','pickerCount','pickerCancel','pickerApply','pickerRotateAll',
    'loginOverlay','loginForm','loginToken','loginError','logout','lang','propsDetails','advDetails'].forEach((id) => { els[id] = $(id); });
 
@@ -906,7 +927,18 @@
   const fmtSize = (n) => { const u = ['B','KB','MB','GB']; let i = 0; let v = n; while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; } return i ? `${v.toFixed(1)} ${u[i]}` : `${n} B`; };
   const naturalCmp = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   let toastTimer;
-  const toast = (msg) => { els.toast.textContent = msg; els.toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove('on'), 2800); };
+  const toast = (msg) => { els.toast.textContent = msg; els.toast.classList.remove('action'); els.toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => els.toast.classList.remove('on'), 2800); };
+  const hideToast = () => els.toast.classList.remove('on', 'action');
+  // A toast with one button, e.g. Undo. It stays up for `ms` and takes pointer input.
+  function toastAction(msg, label, fn, ms) {
+    els.toast.textContent = '';
+    const text = document.createElement('span'); text.textContent = msg;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'toast-btn'; btn.textContent = label;
+    btn.addEventListener('click', fn);
+    els.toast.append(text, btn);
+    els.toast.classList.add('on', 'action');
+    clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, ms);
+  }
   const announce = (msg) => { els.announce.textContent = ''; setTimeout(() => { els.announce.textContent = msg; }, 30); };
   const showError = (msg) => { els.error.textContent = msg; els.error.hidden = false; };
   const clearError = () => { els.error.hidden = true; els.error.textContent = ''; };
@@ -994,7 +1026,7 @@
       localStorage.setItem('cfm_settings', JSON.stringify({
         pageSize: els.pageSize.value, margin: els.margin.value, outName: els.outName.value,
         title: els.metaTitle.value, author: els.metaAuthor.value, subject: els.metaSubject.value, keywords: els.metaKeywords.value,
-        bookmarks: els.optBookmarks.checked, outlines: els.optOutlines.checked, forms: els.optForms.checked, optimize: els.optOptimize.checked, dpi: els.optDpi.checked,
+        bookmarks: els.optBookmarks.checked, outlines: els.optOutlines.checked, forms: els.optForms.checked, optimize: els.optOptimize.checked, dpi: els.optDpi.checked, strip: els.optStrip.checked,
       }));
     } catch (_) {}
   }
@@ -1003,10 +1035,10 @@
       const s = JSON.parse(localStorage.getItem('cfm_settings') || 'null'); if (!s) return;
       if (s.pageSize) els.pageSize.value = s.pageSize; if (s.margin != null) els.margin.value = s.margin; if (s.outName) els.outName.value = s.outName;
       els.metaTitle.value = s.title || ''; els.metaAuthor.value = s.author || ''; els.metaSubject.value = s.subject || ''; els.metaKeywords.value = s.keywords || '';
-      for (const [k, el] of [['bookmarks', els.optBookmarks], ['outlines', els.optOutlines], ['forms', els.optForms], ['optimize', els.optOptimize], ['dpi', els.optDpi]]) if (typeof s[k] === 'boolean') el.checked = s[k];
+      for (const [k, el] of [['bookmarks', els.optBookmarks], ['outlines', els.optOutlines], ['forms', els.optForms], ['optimize', els.optOptimize], ['dpi', els.optDpi], ['strip', els.optStrip]]) if (typeof s[k] === 'boolean') el.checked = s[k];
     } catch (_) {}
   }
-  [els.pageSize, els.margin, els.outName, els.metaTitle, els.metaAuthor, els.metaSubject, els.metaKeywords, els.optBookmarks, els.optOutlines, els.optForms, els.optOptimize, els.optDpi]
+  [els.pageSize, els.margin, els.outName, els.metaTitle, els.metaAuthor, els.metaSubject, els.metaKeywords, els.optBookmarks, els.optOutlines, els.optForms, els.optOptimize, els.optDpi, els.optStrip]
     .forEach((el) => el.addEventListener('change', saveSettings));
 
   // ---------- queue management ----------
@@ -1041,10 +1073,51 @@
   function removeItem(id) {
     const i = items.findIndex((x) => x.id === id); if (i < 0) return;
     const [it] = items.splice(i, 1);
-    if (it.thumb && it.thumb.startsWith('blob:')) URL.revokeObjectURL(it.thumb);
+    holdForUndo([{ it, index: i }], t('removed', it.name));
     announce(t('removed', it.name));
     render(); persist();
   }
+  function clearAll() {
+    if (!items.length) return;
+    const entries = items.map((it, index) => ({ it, index }));
+    items = [];
+    holdForUndo(entries, t('cleared_n', entries.length));
+    announce(t('cleared_n', entries.length));
+    render(); persist();
+  }
+
+  // ----- undo -----
+  // Removing is one click, so it has to be reversible. The last removal (thumbnails and
+  // all) is held while the toast offers Undo, then let go. Ctrl+Z (Cmd+Z) works too.
+  const UNDO_MS = 7000;
+  let undoBuffer = null; // { entries: [{ it, index }], timer }
+  const releaseThumbs = (entries) => { for (const { it } of entries) if (it.thumb && it.thumb.startsWith('blob:')) URL.revokeObjectURL(it.thumb); };
+  function holdForUndo(entries, message) {
+    if (undoBuffer) { clearTimeout(undoBuffer.timer); releaseThumbs(undoBuffer.entries); }
+    undoBuffer = { entries, timer: setTimeout(() => { if (undoBuffer) releaseThumbs(undoBuffer.entries); undoBuffer = null; }, UNDO_MS) };
+    toastAction(message, t('undo'), undo, UNDO_MS);
+  }
+  function undo() {
+    if (!undoBuffer) return false;
+    clearTimeout(undoBuffer.timer);
+    const { entries } = undoBuffer; undoBuffer = null;
+    // Back to their old positions, lowest first so each index is still right. A file
+    // added again in the meantime is not duplicated.
+    const back = entries.filter(({ it }) => !items.some((x) => x.key === it.key)).sort((a, b) => a.index - b.index);
+    for (const { it, index } of back) items.splice(Math.min(index, items.length), 0, it);
+    releaseThumbs(entries.filter((e) => !back.includes(e)));
+    hideToast();
+    announce(t('restored_n', back.length));
+    render(); persist();
+    return true;
+  }
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== 'z') return;
+    const el = e.target;
+    if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+    if ($('tabMerge').hidden) return; // the Sign and Verify tabs have their own lists
+    if (undo()) e.preventDefault();
+  });
   function move(id, delta, focus) {
     const i = items.findIndex((x) => x.id === id); const j = i + delta;
     if (i < 0 || j < 0 || j >= items.length) return;
@@ -1080,7 +1153,16 @@
   function render() {
     els.files.innerHTML = '';
     const total = items.reduce((n, x) => n + x.size, 0);
-    els.queueMeta.textContent = items.length ? `${t('files_n', items.length)} · ${fmtSize(total)}` : '';
+    // Output length: the chosen pages of each file, or all of them. Locked or not yet
+    // inspected files are unknown, so the total then reads as a minimum.
+    let pageTotal = 0, unknown = false;
+    for (const x of items) {
+      if (x.selection) pageTotal += x.selection.length;
+      else if (x.pages != null) pageTotal += x.pages;
+      else unknown = true;
+    }
+    const pagesPart = unknown ? t('pages_plus', pageTotal) : t('pages_n', pageTotal);
+    els.queueMeta.textContent = items.length ? `${t('files_n', items.length)} · ${pagesPart} · ${fmtSize(total)}` : '';
     els.empty.hidden = items.length > 0;
     els.merge.disabled = items.length === 0 || busy;
     items.forEach((it, idx) => {
@@ -1186,7 +1268,7 @@
   // ---------- list tools ----------
   $('sortAz').addEventListener('click', () => { items.sort((a, b) => naturalCmp(a.name, b.name)); render(); persist(); });
   $('reverse').addEventListener('click', () => { items.reverse(); render(); persist(); });
-  $('clear').addEventListener('click', () => { items.forEach((x) => x.thumb && x.thumb.startsWith('blob:') && URL.revokeObjectURL(x.thumb)); items = []; render(); persist(); });
+  $('clear').addEventListener('click', clearAll);
 
   // ---------- inspection (page counts, previews, passwords) ----------
   let inspecting = 0;
@@ -1339,7 +1421,8 @@
     const manifest = {
       items: items.map((it) => ({ pages: it.selection, rotate: it.rotate, page_rotations: it.pageRot || {}, password: it.password || null })),
       page_size: els.pageSize.value, margin: Number(els.margin.value || 0), output_name: els.outName.value || 'merged.pdf',
-      use_image_dpi: els.optDpi.checked, bookmarks: els.optBookmarks.checked, keep_outlines: els.optOutlines.checked, merge_forms: els.optForms.checked, optimize: els.optOptimize.checked,
+      use_image_dpi: els.optDpi.checked, bookmarks: els.optBookmarks.checked, keep_outlines: els.optOutlines.checked, merge_forms: els.optForms.checked, optimize: els.optOptimize.checked, strip_metadata: els.optStrip.checked,
+      output_password: els.outPass.value || null,
       metadata: { title: els.metaTitle.value || null, author: els.metaAuthor.value || null, subject: els.metaSubject.value || null, keywords: els.metaKeywords.value || null },
     };
     form.append('manifest', JSON.stringify(manifest));
@@ -1399,7 +1482,7 @@
     lastResultUrl = URL.createObjectURL(blob); lastResultBlob = blob; lastResultName = name;
     els.download.href = lastResultUrl; els.download.download = name;
     els.resultTitle.textContent = t('done_title', items.length, name);
-    els.resultInfo.textContent = t('done_info', fmtSize(blob.size), (ms / 1000).toFixed(1));
+    els.resultInfo.textContent = (els.outPass.value ? t('done_protected') + ' · ' : '') + t('done_info', fmtSize(blob.size), (ms / 1000).toFixed(1));
     els.result.hidden = false;
     const a = document.createElement('a'); a.href = lastResultUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   }

@@ -359,6 +359,16 @@ struct MergeArgs {
     #[arg(long)]
     no_optimize: bool,
 
+    /// Keep hidden metadata from the inputs: camera EXIF and GPS position in photos, XMP
+    /// packets, application data and edit timestamps. Removed by default.
+    #[arg(long)]
+    keep_metadata: bool,
+
+    /// Encrypt the merged PDF with AES-256 so it opens only with this password (or set
+    /// CFM_OUTPUT_PASSWORD, which keeps it out of your shell history).
+    #[arg(long, env = "CFM_OUTPUT_PASSWORD", hide_env_values = true)]
+    output_password: Option<String>,
+
     /// Ignore the DPI declared by images (1 pixel = 1 point).
     #[arg(long)]
     ignore_image_dpi: bool,
@@ -426,6 +436,8 @@ fn run_merge_cli(args: MergeArgs) -> Result<(), Box<dyn std::error::Error>> {
         keep_outlines: !args.no_source_outlines,
         merge_forms: !args.no_forms,
         optimize: !args.no_optimize,
+        strip_metadata: !args.keep_metadata,
+        output_password: args.output_password.filter(|p| !p.is_empty()),
         metadata: Metadata {
             title: args.title,
             author: args.author,
@@ -433,13 +445,19 @@ fn run_merge_cli(args: MergeArgs) -> Result<(), Box<dyn std::error::Error>> {
             keywords: args.keywords,
         },
     };
+    let protected = options.output_password.is_some();
     let pdf = merge::merge(&inputs, &options)?;
     std::fs::write(&args.output, &pdf)?;
     println!(
-        "Merged {} file(s) into {} ({})",
+        "Merged {} file(s) into {} ({}){}",
         inputs.len(),
         args.output.display(),
-        human_size(pdf.len())
+        human_size(pdf.len()),
+        if protected {
+            ", protected with a password (AES-256)"
+        } else {
+            ""
+        }
     );
     Ok(())
 }
@@ -1366,6 +1384,9 @@ struct Manifest {
     keep_outlines: Option<bool>,
     merge_forms: Option<bool>,
     optimize: Option<bool>,
+    strip_metadata: Option<bool>,
+    /// Encrypt the output so it opens only with this password.
+    output_password: Option<String>,
     #[serde(default)]
     metadata: ManifestMetadata,
 }
@@ -1474,6 +1495,8 @@ async fn parse_merge_form(
         options.keep_outlines = m.keep_outlines.unwrap_or(options.keep_outlines);
         options.merge_forms = m.merge_forms.unwrap_or(options.merge_forms);
         options.optimize = m.optimize.unwrap_or(options.optimize);
+        options.strip_metadata = m.strip_metadata.unwrap_or(options.strip_metadata);
+        options.output_password = m.output_password.filter(|p| !p.is_empty());
         options.metadata = Metadata {
             title: m.metadata.title,
             author: m.metadata.author,

@@ -36,6 +36,11 @@ to anyone, nothing phones home, nothing is logged about your documents.
 - **Keeps what matters.** Page sizes, rotation, links and annotations survive. Each file
   gets a bookmark, the source PDFs' own outlines are nested underneath with their internal
   links intact, and interactive form fields stay fillable (colliding names are renamed).
+- **No hidden metadata.** A phone photo carries its GPS position, the camera and often
+  the owner's name, and a scanned PDF carries edit history. All of that is removed from
+  the merged file by default, without re-encoding a single pixel.
+- **Password-protect the result.** Give the merged PDF a password and it is encrypted with
+  AES-256, so it can travel by email or sit in a shared folder safely.
 - **Smaller output.** Identical fonts and images shared by several inputs are stored once;
   uncompressed streams are compressed.
 - **Correct physical size.** Image pages use the DPI declared by the file, so a 300 DPI
@@ -62,9 +67,10 @@ to anyone, nothing phones home, nothing is logged about your documents.
 - **Paste straight in.** Copy a screenshot or a file and press Ctrl+V (⌘V on a Mac). It
   lands wherever you are: in the merge queue, as your signature on the Sign tab, or
   checked on the spot on the Verify tab.
-- **Comfortable.** Live progress for big merges, duplicate detection, your list survives
-  a page refresh (kept in the browser only, passwords excluded), full keyboard control,
-  English and Spanish, light and dark themes.
+- **Comfortable.** Live progress for big merges, the output's page count before you
+  merge, Undo for Remove and Clear, duplicate detection, a list that survives a page
+  refresh (kept in the browser only, passwords excluded), full keyboard control, English
+  and Spanish, light and dark themes.
 - **Hostable.** Optional access token, HTTPS (bring a certificate or generate one),
   concurrency cap, health endpoint, JSON logs, Docker image, prebuilt binaries.
 - **Also a CLI.** The same binary merges from the terminal for scripts and cron jobs.
@@ -119,15 +125,18 @@ Confidential File Merger v0.1.0
 
    ![The page picker with rendered thumbnails](docs/screenshot-pages-dark.png)
 4. Choose how images are placed (match image size using its DPI, A4, or US Letter with
-   optional margin), the output file name, and optionally document properties and the
-   advanced switches (bookmarks, source outlines, form fields, de-duplication).
+   optional margin), the output file name, an optional **password to open** the result,
+   and optionally document properties and the advanced switches (bookmarks, source
+   outlines, form fields, de-duplication, hidden-metadata removal). The list header shows
+   how many pages the result will have.
 5. **Merge to PDF**. Progress shows which file is being read. The result downloads through
    your browser. The list stays, so you can adjust and merge again, or press
    **Add result to list** to chain merges.
 
 Keyboard: focus a row and use **Alt+↑/↓** to move it, **R** to rotate, **P** for the page
-picker, **Delete** to remove, **↑/↓** to move between rows. **Ctrl+V** anywhere outside a
-text box pastes a copied image or PDF into the tab you are on. Screen readers get the same
+picker, **Delete** to remove, **↑/↓** to move between rows. Removing or clearing shows an
+**Undo** button for a few seconds, and **Ctrl+Z** does the same. **Ctrl+V** anywhere outside
+a text box pastes a copied image or PDF into the tab you are on. Screen readers get the same
 announcements.
 
 ### Signing
@@ -298,6 +307,10 @@ confidential_file_merger merge -r --page-size a4 --margin 36 -o all.pdf \
 # Document properties and switches.
 confidential_file_merger merge -o out.pdf --title "Q1 pack" --author "Ana" \
   --no-source-outlines --ignore-image-dpi a.pdf b.pdf
+
+# Encrypt the result with AES-256. The environment variable keeps the password out of
+# your shell history.
+CFM_OUTPUT_PASSWORD='a long passphrase' confidential_file_merger merge -o locked.pdf a.pdf b.jpg
 ```
 
 ```sh
@@ -336,7 +349,9 @@ confidential_file_merger identity install <id> --cert from-ca.crt --passphrase '
 Per-file options after `?`: `pages=` (ranges, `odd`, `even`, `last`; either direction),
 `rotate=` (whole file), `rotateN=` (page N), `password=`. `--password` applies to every
 encrypted input. `--no-bookmarks`, `--no-source-outlines`, `--no-forms`, `--no-optimize`,
-`--ignore-image-dpi` switch off the corresponding behaviours.
+`--ignore-image-dpi` switch off the corresponding behaviours, and `--keep-metadata` keeps
+the inputs' hidden metadata. `--output-password` (or `CFM_OUTPUT_PASSWORD`) encrypts the
+result.
 
 Exit code is non-zero with a one-line reason if any input cannot be used.
 
@@ -358,7 +373,8 @@ Everything the GUI does goes through a small JSON/multipart API you can script:
 | `POST /api/login`, `POST /api/logout` | Token cookie handling. `GET /api/config` describes the server. |
 
 The manifest carries per-item settings (`pages` as a range string or array, `rotate`,
-`page_rotations`, `password`) matched by position to the files, plus the global options.
+`page_rotations`, `password`) matched by position to the files, plus the global options,
+including `strip_metadata` (default `true`) and `output_password`.
 
 ## How it works
 
@@ -370,8 +386,18 @@ The manifest carries per-item settings (`pages` as a range string or array, `rot
   into one AcroForm. Unreachable objects are pruned; identical streams are shared.
 - **Images** are decoded with the [`image`](https://crates.io/crates/image) crate
   (`tiff` for multi-page TIFF, `resvg` for SVG) and embedded as PDF image XObjects. JPEG
-  data is passed through untouched (DCTDecode); everything else becomes 8-bit Gray or RGB
-  with Flate compression. Transparency is composited onto white.
+  image data is passed through untouched (DCTDecode); everything else becomes 8-bit Gray
+  or RGB with Flate compression. Transparency is composited onto white.
+- **Metadata removal** walks each JPEG's segments, in images and inside source PDFs
+  alike, and drops EXIF (GPS, camera, owner, the embedded preview thumbnail), XMP,
+  Photoshop/IPTC blocks, comments and anything appended after the end of the image, such
+  as the video half of a motion photo. The compressed picture data is copied byte for
+  byte, so pixels are identical; the colour profile and density are kept. A JPEG too
+  unusual to walk is re-encoded losslessly rather than embedded as-is. XMP packets,
+  application data and edit timestamps attached to pages and images are dropped too.
+- **Password protection** uses the PDF 2.0 standard security handler (AES-256, revision 6)
+  with a random file key. The same password opens the file and grants every permission:
+  it protects the file, it does not pretend to stop copying.
 - **Previews** are rendered by [`hayro`](https://crates.io/crates/hayro), a pure-Rust PDF
   rasteriser, so no browser plugin or external program is involved.
 - **Web server** is [`axum`](https://crates.io/crates/axum) with `rustls` for TLS. The GUI
@@ -394,6 +420,7 @@ The manifest carries per-item settings (`pages` as a range string or array, `rot
 | Are files written to disk? | No. Merging happens in memory. Downloads are written by *your* browser. The queue that survives a refresh lives in your browser's own storage, never on the server, and never includes passwords. The one exception is what you ask to be saved: signing identities and trusted certificates, in the data folder. |
 | Do digital signatures need the internet? | No. Keys are generated, used and checked locally. There is no certificate authority, no timestamp server and no revocation lookup. |
 | Where does my private key go? | Nowhere. It stays in the data folder, encrypted with your passphrase, and is decrypted in memory only for the moment of signing. The passphrase is never stored. |
+| Do my photos give away where they were taken? | No. Camera EXIF, the GPS position included, is removed from the merged file by default, along with XMP, comments and edit history from PDFs. |
 | Is anything logged? | One line per merge with the number of inputs and byte sizes. Never file names or content. |
 | Telemetry, analytics, update checks? | None. |
 

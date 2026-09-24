@@ -141,6 +141,88 @@ pub fn from_dynamic(image: &DynamicImage, dpi: Option<(f64, f64)>) -> ImagePage 
     }
 }
 
+/// Rewrite a JPEG without the metadata cameras and editors leave in it: EXIF (GPS
+/// position, camera, owner name, capture time and the embedded preview thumbnail), XMP,
+/// Photoshop/IPTC blocks, comments, vendor `APPn` segments, and anything appended after
+/// the end-of-image marker, such as the video half of a phone's "motion photo" or an HDR
+/// gain map. The compressed image data is copied byte for byte, so the picture itself is
+/// untouched.
+///
+/// Kept: JFIF (it carries the density), the ICC colour profile, and the Adobe segment,
+/// which decides how the colour channels are to be read.
+///
+/// Returns `None` for anything it cannot walk with confidence, so the caller can fall
+/// back to re-encoding the pixels rather than embedding the original bytes.
+pub fn strip_jpeg_metadata(data: &[u8]) -> Option<Vec<u8>> {
+    if !data.starts_with(&[0xFF, 0xD8]) {
+        return None;
+    }
+    let mut out = Vec::with_capacity(data.len());
+    out.extend_from_slice(&[0xFF, 0xD8]);
+    let mut pos = 2;
+    loop {
+        // A marker: one or more 0xFF fill bytes, then its code.
+        if *data.get(pos)? != 0xFF {
+            return None;
+        }
+        while *data.get(pos)? == 0xFF {
+            pos += 1;
+        }
+        let marker = data[pos];
+        pos += 1;
+        match marker {
+            // End of image. Whatever follows is not part of this picture.
+            0xD9 => {
+                out.extend_from_slice(&[0xFF, 0xD9]);
+                return Some(out);
+            }
+            0xD0..=0xD7 | 0x01 => {
+                out.extend_from_slice(&[0xFF, marker]);
+                continue;
+            }
+            0x00 | 0xD8 => return None,
+            _ => {}
+        }
+        let len = u16::from_be_bytes([*data.get(pos)?, *data.get(pos + 1)?]) as usize;
+        if len < 2 {
+            return None;
+        }
+        let end = pos.checked_add(len)?;
+        let payload = data.get(pos + 2..end)?;
+        let keep = match marker {
+            0xE0 => payload.starts_with(b"JFIF\0"),
+            0xE2 => payload.starts_with(b"ICC_PROFILE\0"),
+            0xEE => payload.starts_with(b"Adobe"),
+            0xE1 | 0xE3..=0xED | 0xEF | 0xFE => false,
+            _ => true,
+        };
+        if keep {
+            out.extend_from_slice(&[0xFF, marker]);
+            out.extend_from_slice(&data[pos..end]);
+        }
+        pos = end;
+        if marker == 0xDA {
+            // Entropy-coded data runs until the next marker that is neither a stuffed
+            // 0xFF00 nor a restart marker.
+            let start = pos;
+            loop {
+                if *data.get(pos)? == 0xFF {
+                    let next = *data.get(pos + 1)?;
+                    if next == 0x00 || (0xD0..=0xD7).contains(&next) {
+                        pos += 2;
+                        continue;
+                    }
+                    if next != 0xFF {
+                        break;
+                    }
+                }
+                pos += 1;
+            }
+            out.extend_from_slice(&data[start..pos]);
+        }
+    }
+}
+
 /// Rebuild a `DynamicImage` from a page (used for thumbnails).
 pub fn to_dynamic(page: &ImagePage) -> Result<DynamicImage, ImageError> {
     match &page.pixels {
@@ -531,6 +613,109 @@ fn exif_dpi(tiff: &[u8]) -> Option<(f64, f64)> {
 mod tests {
     use super::*;
     use image::{ImageBuffer, Rgb};
+
+    /// A JPEG that carries what a phone leaves behind: EXIF with a GPS position and an
+    /// owner name, an XMP packet, a comment, and a second picture appended after the end.
+    fn jpeg_with_metadata() -> Vec<u8> {
+        let img = image::RgbImage::from_fn(64, 48, |x, y| {
+            image::Rgb([(x * 4) as u8, (y * 5) as u8, 90])
+        });
+        let mut plain = Vec::new();
+        image::DynamicImage::ImageRgb8(img)
+            .write_to(&mut Cursor::new(&mut plain), ImageFormat::Jpeg)
+            .unwrap();
+        let segment = |marker: u8, body: &[u8]| {
+            let mut s = vec![0xFF, marker];
+            s.extend_from_slice(&((body.len() + 2) as u16).to_be_bytes());
+            s.extend_from_slice(body);
+            s
+        };
+        let mut out = plain[..2].to_vec();
+        out.extend(segment(0xE0, b"JFIF\0\x01\x01\x01\x00\x96\x00\x96\x00\x00"));
+        out.extend(segment(
+            0xE1,
+            b"Exif\0\0MM\0*GPS 14N 120E owner=Jane Secretperson",
+        ));
+        out.extend(segment(
+            0xE1,
+            b"http://ns.adobe.com/xap/1.0/\0<x:xmpmeta>XMPSECRET</x:xmpmeta>",
+        ));
+        out.extend(segment(0xE2, b"ICC_PROFILE\0\x01\x01fake-profile"));
+        out.extend(segment(0xED, b"Photoshop 3.0\0IPTC caption SECRET"));
+        out.extend(segment(0xFE, b"COMMENTSECRET"));
+        // The rest of the real file, minus its own SOI.
+        out.extend_from_slice(&plain[2..]);
+        // A "motion photo": more data after the end-of-image marker.
+        out.extend_from_slice(b"\0\0\0\x18ftypmp42TRAILINGVIDEOSECRET");
+        out
+    }
+
+    #[test]
+    fn strip_removes_camera_metadata_and_keeps_the_picture() {
+        let dirty = jpeg_with_metadata();
+        let clean = strip_jpeg_metadata(&dirty).expect("a valid JPEG");
+        for secret in [
+            &b"Secretperson"[..],
+            b"XMPSECRET",
+            b"IPTC",
+            b"COMMENTSECRET",
+            b"TRAILINGVIDEOSECRET",
+            b"Exif",
+        ] {
+            assert!(
+                !clean.windows(secret.len()).any(|w| w == secret),
+                "{} survived",
+                String::from_utf8_lossy(secret)
+            );
+        }
+        // Kept: density and colour profile.
+        assert!(clean.windows(5).any(|w| w == b"JFIF\0"));
+        assert!(clean.windows(12).any(|w| w == b"ICC_PROFILE\0"));
+        assert!(clean.ends_with(&[0xFF, 0xD9]));
+        // Same pixels, byte for byte, because the scan data was copied, not re-encoded.
+        let a = image::load_from_memory_with_format(&dirty, ImageFormat::Jpeg)
+            .unwrap()
+            .to_rgb8();
+        let b = image::load_from_memory_with_format(&clean, ImageFormat::Jpeg)
+            .unwrap()
+            .to_rgb8();
+        assert_eq!(a.as_raw(), b.as_raw());
+        // And the density still reads the same.
+        assert_eq!(jpeg_dpi(&clean), Some((150.0, 150.0)));
+    }
+
+    #[test]
+    fn strip_handles_progressive_and_restart_markers() {
+        // A real progressive JPEG (ten scans, with tables between them) using restart
+        // markers inside the entropy-coded data, and EXIF with a GPS position. The scans
+        // must pass through untouched and the metadata must go.
+        let dirty = include_bytes!("../tests/fixtures/progressive_rst.jpg");
+        assert_eq!(dirty.windows(2).filter(|w| *w == [0xFF, 0xDA]).count(), 10);
+        let clean = strip_jpeg_metadata(dirty).unwrap();
+        assert!(!clean.windows(4).any(|w| w == b"Exif"));
+        assert!(!clean.windows(13).any(|w| w == b"FixtureArtist"));
+        assert!(!clean.windows(14).any(|w| w == b"FixtureComment"));
+        assert_eq!(clean.windows(2).filter(|w| *w == [0xFF, 0xDA]).count(), 10);
+        let a = image::load_from_memory_with_format(dirty, ImageFormat::Jpeg)
+            .unwrap()
+            .to_rgb8();
+        let b = image::load_from_memory_with_format(&clean, ImageFormat::Jpeg)
+            .unwrap()
+            .to_rgb8();
+        assert_eq!(a.as_raw(), b.as_raw());
+    }
+
+    #[test]
+    fn strip_refuses_what_it_cannot_walk() {
+        assert!(strip_jpeg_metadata(b"not a jpeg").is_none());
+        // Truncated inside a segment.
+        assert!(strip_jpeg_metadata(&[0xFF, 0xD8, 0xFF, 0xE1, 0x00, 0x40, 1, 2, 3]).is_none());
+        // Truncated inside the scan: never pretend the image is complete.
+        let mut cut = jpeg_with_metadata();
+        let sos = cut.windows(2).position(|w| w == [0xFF, 0xDA]).unwrap();
+        cut.truncate(sos + 40);
+        assert!(strip_jpeg_metadata(&cut).is_none());
+    }
 
     #[test]
     fn png_phys_is_read() {
